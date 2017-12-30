@@ -1,0 +1,50 @@
+PODS:
+  - ActionSheetPicker-3.0 (2.2.0)
+  - AFMActionSheet (2.0.0)
+  - Alamofire (4.4.0)
+  - AZDropdownMenu (1.1.3)
+  - GoogleMaps (2.2.0):
+    - GoogleMaps/Maps (= 2.2.0)
+  - GoogleMaps/Base (2.2.0)
+  - GoogleMaps/Maps (2.2.0):
+    - GoogleMaps/Base
+  - GooglePlaces (2.2.0):
+    - GoogleMaps/Base (= 2.2.0)
+  - JHTAlertController (0.2.4)
+  - KRActivityIndicatorView (2.0.2)
+  - KRProgressHUD (3.0.0):
+    - KRActivityIndicatorView (~> 2.0.2)
+  - PopOverMenu (2.0.4)
+  - SwiftyJSON (3.1.4)
+  - WOWMarkSlider (0.1.7)
+
+DEPENDENCIES:
+  - ActionSheetPicker-3.0
+  - AFMActionSheet
+  - Alamofire
+  - AZDropdownMenu
+  - GoogleMaps
+  - GooglePlaces
+  - JHTAlertController
+  - KRProgressHUD
+  - PopOverMenu
+  - SwiftyJSON
+  - WOWMarkSlider
+
+SPEC CHECKSUMS:
+  ActionSheetPicker-3.0: d11a4c12c6aaf704b8a3f56d179198c99f3e41e6
+  AFMActionSheet: 516ed2aa70d8b38995c3f267e5dc844763cd1242
+  Alamofire: dc44b1600b800eb63da6a19039a0083d62a6a62d
+  AZDropdownMenu: 5aa9d598d0c8aa36ca51a7302e79b98d544d5554
+  GoogleMaps: 104c418d61ab8a05dff06ed0784c25ea9d37da45
+  GooglePlaces: bca867d5e9da15384c794b945e4226848bc6e9d9
+  JHTAlertController: 8999fdf41c60a3d6698a3415ff1448f4ce4680e5
+  KRActivityIndicatorView: 2a9d5442ba8da6274db3afdf46aeaef7cf6dd8ad
+  KRProgressHUD: 14f9fad06080bdb1e59569104a8eda654c83e813
+  PopOverMenu: 5d536f08b51d89235378264784a1d265807d3c41
+  SwiftyJSON: c2842d878f95482ffceec5709abc3d05680c0220
+  WOWMarkSlider: 690025805287b6ed65b5f0771e4143800a53cf7d
+
+PODFILE CHECKSUM: d5192a5aaf1826189f1d9bb936ce7de5f0698d93
+
+COCOAPODS: 1.2.0
