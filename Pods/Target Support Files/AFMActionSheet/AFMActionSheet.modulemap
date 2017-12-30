@@ -1,0 +1,6 @@
+framework module AFMActionSheet {
+  umbrella header "AFMActionSheet-umbrella.h"
+
+  export *
+  module * { export * }
+}
