@@ -11,14 +11,44 @@ import ActionSheetPicker_3_0
 
 let PlaceHolderText = "Type detail here..."
 
+enum CreateContentCellStatus {
+    case createPin
+    case editPin
+}
+
 class CreateContentCell: UICollectionViewCell {
+    
+    var createContentController: CreateContentController?
+    var status: CreateContentCellStatus? {
+        
+        didSet {
+            if self.status == .createPin {
+                self.lakeNameTextField.isUserInteractionEnabled = true
+                self.speciesTextField.isUserInteractionEnabled = true
+            } else {
+                self.lakeNameTextField.isUserInteractionEnabled = false
+                self.speciesTextField.isUserInteractionEnabled = false
+            }
+        }
+    }
+    
+    var speciesTextFieldHeightConstraint: NSLayoutConstraint?
+    var detailTextViewHeightConstraint: NSLayoutConstraint?
+    
+    var titleLabel: UILabel!
+    var filteredArray = [String]()
     
     var contents: Contents? {
         
         didSet {
             
             if let lakeName = contents?.lakeName {
-                lakeNameTextField.text = lakeName
+                
+                if lakeName == "Unknown Lake" {
+                    lakeNameTextField.placeholder = "Choose Lake"
+                } else {
+                    lakeNameTextField.text = lakeName
+                }
             }
             
             if let zoneName = contents?.zoneName {
@@ -27,8 +57,11 @@ class CreateContentCell: UICollectionViewCell {
             if let townshipName = contents?.townshipName {
                 townshipTextField.text = townshipName
             }
-            if let kind = contents?.kind {
+            if let kind = contents?.kind, kind != "" {
                 kindTextField.text = kind
+                
+                self.kindTextField.isUserInteractionEnabled = false
+                self.handleSpeciesDetailInCase(kind: kind)
             }
             if let species = contents?.species {
                 speciesTextField.text = species
@@ -47,24 +80,26 @@ class CreateContentCell: UICollectionViewCell {
         }
     }
     
-    let lakeNameTextField: ToplessTextField = {
+    lazy var lakeNameTextField: ToplessTextField = {
         let textField = ToplessTextField()
         textField.placeholder = "Type Lake"
+        textField.isUserInteractionEnabled = true
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderColor = .black
-        
+        textField.delegate = self
+        textField.addTarget(self, action: #selector(handleSearchPopList), for: .touchDown)
         return textField
     }()
     
     lazy var zoneTextField: ToplessTextField = {
         let textField = ToplessTextField()
         textField.placeholder = "Select Zone"
-        textField.isUserInteractionEnabled = true
+        textField.isUserInteractionEnabled = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderColor = .black
         textField.delegate = self
         
-        textField.addTarget(self, action: #selector(showMenu(sender:)), for: .touchDown)
+//        textField.addTarget(self, action: #selector(showMenu(sender:)), for: .touchDown)
         
         return textField
     }()
@@ -72,12 +107,12 @@ class CreateContentCell: UICollectionViewCell {
     lazy var townshipTextField: ToplessTextField = {
         let textField = ToplessTextField()
         textField.placeholder = "Select Township"
-        textField.isUserInteractionEnabled = true
+        textField.isUserInteractionEnabled = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderColor = .black
         textField.delegate = self
         
-        textField.addTarget(self, action: #selector(showMenu(sender:)), for: .touchDown)
+//        textField.addTarget(self, action: #selector(showMenu(sender:)), for: .touchDown)
         
         return textField
     }()
@@ -110,6 +145,7 @@ class CreateContentCell: UICollectionViewCell {
     
     lazy var latitudeTextField: ToplessTextField = {
         let textField = ToplessTextField()
+        textField.isUserInteractionEnabled = false
         textField.placeholder = "Latitude(-90<Latitude<+90)"
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderColor = .black
@@ -123,6 +159,7 @@ class CreateContentCell: UICollectionViewCell {
     
     lazy var longitudeTextField: ToplessTextField = {
         let textField = ToplessTextField()
+        textField.isUserInteractionEnabled = false
         textField.placeholder = "Longitude(-180<Longitude<+180)"
         textField.translatesAutoresizingMaskIntoConstraints = false
         textField.borderColor = .black
@@ -146,16 +183,73 @@ class CreateContentCell: UICollectionViewCell {
         return textView
     }()
     
+    lazy var submitButton: UIButton = {
+        
+        let button = UIButton(type: .system)
+        button.setTitle("Submit", for: .normal)
+        button.backgroundColor = StyleGuideManager.fishLegitDefultBlueColor
+        button.tintColor = .white
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(handleSubmit), for: .touchUpInside)
+        return button
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         backgroundColor = .white
         
         self.setupViews()
+        setupVars()
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    fileprivate func setupVars() {
+        SCSQLite.initWithDatabase("fishy.sqlite3")
+        let query = "SELECT id, name FROM lakes"
+        let array = SCSQLite.selectRowSQL(query)! as NSArray
+        filteredArray.removeAll()
+        
+        for i in 0  ..< (array.count)  {
+            let dictionary = array[i] as! NSDictionary
+            let nameLake = dictionary.value(forKey: "name") as? String
+            let idLake = dictionary.value(forKey: "id") as? Int
+            if let name = nameLake {
+                if idLake != nil {
+                    filteredArray.append(name)
+                }
+            }
+        }
+        filteredArray = filteredArray.sorted()
+    }
+}
+
+//MARK: handle search lake
+extension CreateContentCell {
+    
+    @objc fileprivate func handleSearchPopList() {
+        
+        SRPopView.sharedManager().shouldShowAutoSearchBar = true
+        
+        SRPopView.show(withButton: titleLabel, andArray: filteredArray, andHeading: "FishLegit") { (lakeName) in
+            
+            guard let lakeName = lakeName else { return }
+            self.lakeNameTextField.text = lakeName
+            
+        }
+    }
+}
+
+//MARK: handle submit
+extension CreateContentCell {
+    
+    @objc fileprivate func handleSubmit() {
+        
+        self.endEditing(true)
+        self.createContentController?.handleSubmit()
     }
     
 }
@@ -172,6 +266,7 @@ extension CreateContentCell {
         addSubview(latitudeTextField)
         addSubview(longitudeTextField)
         addSubview(detailTextView)
+        addSubview(submitButton)
         
         lakeNameTextField.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
         lakeNameTextField.heightAnchor.constraint(equalToConstant: 40).isActive = true
@@ -194,7 +289,8 @@ extension CreateContentCell {
         kindTextField.topAnchor.constraint(equalTo: townshipTextField.bottomAnchor, constant: 0).isActive = true
         
         speciesTextField.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
-        speciesTextField.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        speciesTextFieldHeightConstraint = speciesTextField.heightAnchor.constraint(equalToConstant: 40)
+        speciesTextFieldHeightConstraint?.isActive = true
         speciesTextField.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         speciesTextField.topAnchor.constraint(equalTo: kindTextField.bottomAnchor, constant: 0).isActive = true
         
@@ -209,13 +305,19 @@ extension CreateContentCell {
         longitudeTextField.topAnchor.constraint(equalTo: latitudeTextField.bottomAnchor, constant: 0).isActive = true
         
         detailTextView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
-        detailTextView.heightAnchor.constraint(equalToConstant: 150).isActive = true
+        detailTextViewHeightConstraint = detailTextView.heightAnchor.constraint(equalToConstant: 150)
+        detailTextViewHeightConstraint?.isActive = true
         detailTextView.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
         detailTextView.topAnchor.constraint(equalTo: longitudeTextField.bottomAnchor, constant: 10).isActive = true
         
         detailTextView.delegate = self
         detailTextView.text = PlaceHolderText
         detailTextView.textColor = UIColor.lightGray
+        
+        submitButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.8).isActive = true
+        submitButton.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        submitButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        submitButton.topAnchor.constraint(equalTo: detailTextView.bottomAnchor, constant: 10).isActive = true
     }
 }
 
@@ -251,7 +353,7 @@ extension CreateContentCell {
         if sender == zoneTextField {
             title = "Select Zone"
         } else if sender == kindTextField {
-            title = "Select Kin"
+            title = "Select Kind"
         } else if sender == townshipTextField {
             title = "Select Township"
         } else if sender == speciesTextField {
@@ -281,6 +383,8 @@ extension CreateContentCell {
             
             if let lakeName = value as? String {
                 sender.text = lakeName
+                
+                self.handleSpeciesDetailInCase(kind: lakeName)
             }
             
         }, cancel: { (cancelPicker) in
@@ -298,6 +402,17 @@ extension CreateContentCell {
         
         return picker!
         
+    }
+    
+    private func handleSpeciesDetailInCase(kind: String) {
+        
+        if kind == LakeType.opportunity.rawValue {
+            self.speciesTextFieldHeightConstraint?.constant = 40
+//            self.detailTextViewHeightConstraint?.constant = 0
+        } else if kind == LakeType.exception.rawValue {
+            self.speciesTextFieldHeightConstraint?.constant = 0
+//            self.detailTextViewHeightConstraint?.constant = 150
+        }
     }
 }
 
@@ -317,7 +432,7 @@ extension CreateContentCell: UITextFieldDelegate {
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         
-        if textField == lakeNameTextField || textField == latitudeTextField || textField == longitudeTextField {
+        if textField == latitudeTextField || textField == longitudeTextField {
             return true
         } else {
             return false
@@ -325,7 +440,7 @@ extension CreateContentCell: UITextFieldDelegate {
     }
     
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if textField == lakeNameTextField || textField == latitudeTextField || textField == longitudeTextField {
+        if textField == latitudeTextField || textField == longitudeTextField {
             return true
         } else {
             return false
@@ -402,6 +517,7 @@ extension CreateContentCell {
 extension CreateContentCell: UITextViewDelegate {
     
     func textViewDidBeginEditing(_ textView: UITextView) {
+        
         if textView.textColor == UIColor.lightGray {
             textView.text = nil
             textView.textColor = UIColor.black

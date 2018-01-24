@@ -31,7 +31,7 @@ class SliderView: UIView, WOWMarkSliderDelegate {
         slider.markWidth = 3.0
         slider.minimumValue = 0
         slider.maximumValue = 125
-        slider.value = 25
+        slider.value = 100
         slider.selectedBarColor = .darkGray
         slider.unselectedBarColor = .white
         slider.handlerColor = .black
@@ -43,7 +43,7 @@ class SliderView: UIView, WOWMarkSliderDelegate {
     let distanceLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 17)
-        label.text = "25 Km"
+        label.text = "100 Km"
 //        label.sizeToFit()
         label.textColor = .white
         label.textAlignment = .center

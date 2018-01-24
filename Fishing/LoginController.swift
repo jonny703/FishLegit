@@ -99,7 +99,6 @@ extension LoginController {
             userDefaults.setUserId(userId)
         }
         dismiss(animated: true, completion: nil)
-        
     }
     
     fileprivate func handleSigninWith(email: String, password: String) {

@@ -5,6 +5,35 @@
 //  Created by John Nik on 27/06/2017.
 //  Copyright © 2017 johnik703. All rights reserved.
 //
+/*
+{
+    id: "6",
+    user_id: "24",
+    lake_id: "17",
+    name: "lake",
+    lon: "12.32",
+    lat: "332.32",
+    created: "2018-01-08 05:43:10",
+    active: "-1",
+    type: "opportunity",
+    edit_new: "Edit",
+    zone: "",
+    township: "town",
+    detail: "",
+    id2: "6",
+    user_id2: "24",
+    lake_id2: "17",
+    name2: "lake",
+    lon2: "",
+    lat2: "",
+    created2: "2018-01-08 05:43:10",
+    active2: "-1",
+    type2: "opportunity",
+    zone2: "",
+    township2: "",
+    detail2: ""
+}
+*/
 
 import UIKit
 import GoogleMaps
@@ -16,7 +45,15 @@ import JHTAlertController
 
 let kOFFSET_FOR_KEYBOARD: CGFloat = 135.0
 
+protocol EditPinDelegate {
+    func resetContentsAndLakeMarker(contents: Contents)
+}
+
 class EditPinController: UIViewController {
+    
+    var polylines = [GMSPolyline]()
+    var zoneMarkers = [GMSMarker]()
+    var gmsPaths = [GMSPath]()
     
     let reachAbility = Reachability()!
     
@@ -25,13 +62,30 @@ class EditPinController: UIViewController {
     var markers = [LakeMarker]()
     var lakeInfos = [LakeInfo]()
     
+    var contents: Contents?
+    
     var currentLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
+    var currentMarkerLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
+    var currentZone = "Unknown Zone"
+    var currentTownship = "Unknown Township"
+    
     var currentMarker: LakeMarker?
     var currentIndex: Int?
     var currentLakeId: Int?
     
     let dataProvider = GoogleDataProvider()
     var alertController: JHTAlertController?
+    
+    var parseStatus = ParseStatus.Zone
+    
+    var eName: String = String()
+    var zoneName = String()
+    var coordinate = String()
+    var zones = [Zone]()
+    
+    var townshipName = String()
+    var townshipCoordinate = String()
+    var townships = [Township]()
     
     var titleLabel: UILabel!
     var resultDropdownMenu: AZDropdownMenu?
@@ -49,6 +103,16 @@ class EditPinController: UIViewController {
         
     }()
     
+    lazy var showBorderSwitch: UISwitch = {
+        let borderSwitch = UISwitch()
+        borderSwitch.onTintColor = StyleGuideManager.fishLegitDefultBlueColor
+        borderSwitch.backgroundColor = .gray
+        borderSwitch.layer.cornerRadius = 16
+        borderSwitch.translatesAutoresizingMaskIntoConstraints = false
+        borderSwitch.addTarget(self, action: #selector(handleShowZoneBorderSwitch(sender:)), for: .valueChanged)
+        return borderSwitch
+    }()
+    
     let mapTypeSegement: UISegmentedControl = {
         
         let segement = UISegmentedControl(items: ["Normal", "Satellite"])
@@ -59,11 +123,27 @@ class EditPinController: UIViewController {
         return segement
     }()
     
+    let invalidCommandLabel: UILabel = {
+        
+        let label = UILabel()
+        label.textAlignment = .center
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.backgroundColor = .lightGray
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.layer.cornerRadius = 20
+        label.layer.masksToBounds = true
+        return label
+        
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupViews()
         setupVars()
+        
+        self.handleSetMarker()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -74,6 +154,70 @@ class EditPinController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         self.removeKeyboardObserver()
+    }
+}
+
+extension EditPinController {
+    
+    fileprivate func handleSetMarker() {
+        
+        KRProgressHUD.show()
+        perform(#selector(setCurrentTownshipZone), with: nil, afterDelay: 1)
+        
+        guard let marker = self.currentMarker else { return }
+        guard let contents = self.setContents() else { return }
+        self.contents = contents
+        
+        self.googleMapView.clear()
+        marker.map = self.googleMapView
+        self.handleShowZoneBorders()
+        self.focusLakeMarker()
+    }
+    
+    @objc private func setCurrentTownshipZone() {
+        self.townshipName = self.handleGetTownship()
+        self.zoneName = self.handleGetZone()
+        
+        KRProgressHUD.dismiss()
+    }
+}
+
+//MARK: handle zone borders feedback
+extension EditPinController {
+    
+    func setInvalidCommandLabel() {
+        view.addSubview(invalidCommandLabel)
+        
+        invalidCommandLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        invalidCommandLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50).isActive = true
+        invalidCommandLabel.widthAnchor.constraint(equalToConstant: 250).isActive = true
+        invalidCommandLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        invalidCommandLabel.alpha = 0
+    }
+    
+    func showAlert(warnigString: String) {
+        
+        invalidCommandLabel.text = warnigString
+        fadeViewInThenOut(view: invalidCommandLabel, delay: 3)
+        
+    }
+    
+    func fadeViewInThenOut(view : UIView, delay: TimeInterval) {
+        
+        let animationDuration = 0.25
+        
+        // Fade in the view
+        UIView.animate(withDuration: animationDuration, animations: { () -> Void in
+            view.alpha = 1
+        }) { (Bool) -> Void in
+            
+            // After the animation completes, fade out the view after a delay
+            
+            UIView.animate(withDuration: animationDuration, delay: delay, options: .curveEaseInOut, animations: { () -> Void in
+                view.alpha = 0
+            }, completion: nil)
+        }
     }
 }
 
@@ -247,6 +391,7 @@ extension EditPinController {
         self.resultDropdownMenu = self.setResultsDropDownMenu(resultsArray: self.resultsArray)
         
         self.googleMapView.clear()
+        self.handleShowZoneBorders()
         tempMarker.map = self.googleMapView
         
         self.currentMarker = tempMarker
@@ -259,7 +404,7 @@ extension EditPinController {
         let place = marker.place
         let coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(lat), longitude: CLLocationDegrees(lon))
         
-        let lakePlace = LakePlace(lakeName: place.lakeName , townshipName: place.townshipName , opportunity: place.opportunity , exception: place.exception, coordinate: coordinate , distance: 10.0 , type: place.type )
+        let lakePlace = LakePlace(lakeName: place.lakeName , townshipName: place.townshipName , opportunity: place.opportunity , exception: place.exception, coordinate: coordinate , distance: 10.0 , type: place.type, typeId: place.typeId, species: place.species)
         return lakePlace
         
     }
@@ -369,16 +514,34 @@ extension EditPinController {
 
                     self?.googleMapView.clear()
                     marker.map = self?.googleMapView
+                    self?.handleShowZoneBorders()
                     self?.focusLakeForSearch(index: indexPath.row)
                 } else {
-                    let title = "This lake has no location info."
-                    self?.handleShowTextFieldAlert(title: title, marker: marker, index: indexPath.row)
+//                    self?.handleShowAlertForNoLocation(marker: marker, index: indexPath.row)
+                    
+                    self?.handleSetMarkerForNoLocation(marker: marker, index: indexPath.row)
                 }
                 
             }
         }
         
         return menu
+    }
+    
+    private func handleShowAlertForNoLocation(marker: LakeMarker, index: Int) {
+        let title = "This lake has no location info."
+        self.handleShowTextFieldAlert(title: title, marker: marker, index: index)
+    }
+    
+    private func handleSetMarkerForNoLocation(marker: LakeMarker, index: Int) {
+        let centerPoint = self.googleMapView.center
+        let centerCoordinate = googleMapView.projection.coordinate(for: centerPoint)
+        currentMarkerLocation = centerCoordinate
+        
+        let latStr = String(currentMarkerLocation.latitude)
+        let lonStr = String(currentMarkerLocation.longitude)
+        
+        self.resetFakeLakeWith(latStr: latStr, lonStr: lonStr, marker: marker, index: index)
     }
 }
 
@@ -403,32 +566,83 @@ extension EditPinController {
     }
 }
 
+extension EditPinController: EditPinDelegate {
+    func resetContentsAndLakeMarker(contents: Contents) {
+        
+        
+        
+    }
+}
+
+//MARK: update content
+extension EditPinController {
+    fileprivate func handleUpdatingContents() {
+        
+        guard let contents = self.contents else {
+            return
+        }
+        
+        contents.townshipName = self.townshipName
+        contents.zoneName = self.zoneName
+        
+        let layout = UICollectionViewFlowLayout()
+        let createContentController = CreateContentController(collectionViewLayout: layout)
+        createContentController.contents = contents
+        createContentController.editPinDelegate = self
+        let navController = UINavigationController(rootViewController: createContentController)
+        
+        present(navController, animated: true, completion: nil)
+    }
+    
+    private func setContents() -> Contents? {
+        
+        let contents = Contents()
+        
+        guard let lakeName = self.currentMarker?.place.lakeName else { return nil }
+        guard let lat = self.currentMarker?.place.coordinate.latitude else { return nil }
+        guard let lon = self.currentMarker?.place.coordinate.longitude else { return nil }
+        guard let kind = self.currentMarker?.place.type else { return nil }
+        guard let opportunity = self.currentMarker?.place.opportunity else { return nil }
+        guard let exception = self.currentMarker?.place.exception else { return nil }
+        guard let typId = self.currentMarker?.place.typeId else { return nil }
+        
+        contents.lakeName = lakeName
+        contents.latitude = lat
+        contents.longitude = lon
+        contents.kind = kind
+        contents.typeId = typId
+        if kind == LakeType.opportunity.rawValue {
+            contents.detail = opportunity
+            contents.species = self.currentMarker?.place.species
+        } else {
+            contents.detail = exception
+        }
+        
+        contents.townshipName = self.currentTownship
+        contents.zoneName = self.currentZone
+        
+        return contents
+    }
+    
+}
+
 //MARK: handle popover menu
 extension EditPinController: UIAdaptivePresentationControllerDelegate {
     
     @objc fileprivate func handlePopoverMenu(sender: UIBarButtonItem) {
         
-        let menus = ["Search Lake", "Search Results", "Reset Location", "Submit"]
+        let menus = ["Marker/Pin Data"]
         let popoverMenuController = PopOverViewController.instantiate()
         popoverMenuController.setTitles(menus)
         popoverMenuController.setSeparatorStyle(.singleLine)
         popoverMenuController.popoverPresentationController?.barButtonItem = sender
-        popoverMenuController.preferredContentSize = CGSize(width: 150, height: 180)
+        popoverMenuController.preferredContentSize = CGSize(width: 150, height: 45)
         popoverMenuController.presentationController?.delegate = self
         popoverMenuController.completionHandler = { selectRow in
             
             switch (selectRow) {
             case 0:
-                self.handleSearchPopList()
-                break
-            case 1:
-                self.handleShowResultDropdownMenu()
-                break
-            case 2:
-                self.handleShowResetLocationAlert()
-                break
-            case 3:
-                self.handleSubmit()
+                self.handleUpdatingContents()
                 break
             default:
                 break
@@ -551,6 +765,17 @@ extension EditPinController {
         googleMapView.animate(toZoom: Float(zoom))
     }
     
+    fileprivate func focusLakeMarker() {
+        if let marker = self.currentMarker {
+            self.googleMapView.animate(toLocation: marker.place.coordinate)
+            self.currentMarkerLocation = marker.place.coordinate
+        } else {
+            self.googleMapView.animate(toLocation: currentLocation)
+        }
+        let zoom = self.calculateZoomLevel(radius: 100)
+        googleMapView.animate(toZoom: Float(zoom))
+    }
+    
     fileprivate func calculateZoomLevel(radius: Double) -> Int {
         
         let scale: Double = radius * 50
@@ -605,12 +830,42 @@ extension EditPinController: GMSMapViewDelegate {
 //        }
     }
     
+//    func mapView(_ mapView: GMSMapView, didEndDragging marker: GMSMarker) {
+//
+//        guard let currentMarker = self.currentMarker else { return }
+//        guard let currentIndex = self.currentIndex else { return }
+//
+//        self.resetCurrentMarkerWith(currentIndex: currentIndex, currentMarker: currentMarker, marker: marker)
+//    }
+    
     func mapView(_ mapView: GMSMapView, didEndDragging marker: GMSMarker) {
         
         guard let currentMarker = self.currentMarker else { return }
-        guard let currentIndex = self.currentIndex else { return }
         
-        self.resetCurrentMarkerWith(currentIndex: currentIndex, currentMarker: currentMarker, marker: marker)
+        self.resetCurrentMarkerWith(currentMarker: currentMarker, marker: marker)
+    }
+    
+    private func resetCurrentMarkerWith(currentMarker: LakeMarker, marker: GMSMarker) {
+        
+        KRProgressHUD.show()
+        
+        let lakePlace = self.resetLakePlaceWith(lat: marker.position.latitude, lon: marker.position.longitude, marker: currentMarker)
+        let tempMarker = self.setMarkerWith(place: lakePlace)
+        self.currentMarker = tempMarker
+        
+        self.currentMarkerLocation = tempMarker.place.coordinate
+        
+        self.contents?.latitude = marker.position.latitude
+        self.contents?.longitude = marker.position.longitude
+        
+        perform(#selector(setTownshipZone), with: nil, afterDelay: 1.0)
+    }
+    
+    @objc private func setTownshipZone() {
+        self.contents?.townshipName = self.handleGetTownship()
+        self.contents?.zoneName = self.handleGetZone()
+        
+        KRProgressHUD.dismiss()
     }
     
     private func resetCurrentMarkerWith(currentIndex: Int, currentMarker: LakeMarker, marker: GMSMarker) {
@@ -639,6 +894,39 @@ extension EditPinController {
         
     }
     
+    private func handleGetOldData(type: String, typeId: String) -> OldPin {
+        
+        SCSQLite.initWithDatabase("fishy.sqlite3")
+        
+        var query = ""
+        
+        if type == LakeType.opportunity.rawValue {
+            query = "SELECT lat, lon, townships, zones FROM features where id=" + typeId
+        } else {
+            query = "SELECT lat, lon, townships, zone FROM exceptions where id=" + typeId
+        }
+        
+        let array = SCSQLite.selectRowSQL(query)! as NSArray
+        let dictionary = array[0] as! NSDictionary
+        let lon = dictionary.value(forKey: "lon") as? String
+        let lat = dictionary.value(forKey: "lat") as? String
+        let township = dictionary.value(forKey: "townships") as? String
+        
+        var zone: String?
+        if type == LakeType.opportunity.rawValue {
+            
+            if let zoneInt = dictionary.value(forKey: "zones") as? Int {
+                zone = String(describing: zoneInt)
+            }
+            
+        } else {
+            zone = dictionary.value(forKey: "zone") as? String
+        }
+        
+        let oldPin = OldPin(lon: lon == "" ? "0" : lon, lat: lat == "" ? "0" : lat, township: township == "" ? "0" : township, zone: zone == "" ? "0" : zone)
+        return oldPin
+    }
+    
     @objc fileprivate func handleSubmit() {
         guard let userId = UserDefaults.standard.getUserId() else { return }
         guard let lakeId = self.currentLakeId, let currentMarker = self.currentMarker else {
@@ -657,9 +945,28 @@ extension EditPinController {
         let latitude = currentMarker.place.coordinate.latitude
         let lat = String(format: "%f", latitude)
         let type = currentMarker.place.type
-        let township = String(getIdWithName(name: currentMarker.place.townshipName, tableName: "townships"))
+        let typeId = currentMarker.place.typeId
+//        let township = String(getIdWithName(name: currentMarker.place.townshipName, tableName: "townships"))
         
-        let requestStr = String(format: WebService.editPinSubmit.rawValue, lakeId, userId, lakeName, lon, lat, type, township)
+        let oldPin = self.handleGetOldData(type: type, typeId: typeId)
+        
+        let township = self.handleGetTownship()
+        let zone = self.handleGetZone()
+        
+        var townshipId = "0"
+        var zoneId = "0"
+        
+        if township != "Unknown Township" {
+            townshipId = township
+        }
+        
+        if zone != "Unknown Zone" {
+            zoneId = zone
+        }
+        
+        guard let oldLat = oldPin.lat, let oldLon = oldPin.lon, let oldTownship = oldPin.township, let oldZone = oldPin.zone else { return }
+        
+        let requestStr = String(format: WebService.editPinSubmit.rawValue, lakeId, userId, lakeName, lon, lat, type, townshipId, typeId, zoneId, oldLat, oldLon, oldTownship, oldZone)
         
         print("requestStr: ", requestStr)
         guard let urlStr = requestStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
@@ -717,6 +1024,274 @@ extension EditPinController {
     
 }
 
+//MARK: handle shown zone borders
+extension EditPinController {
+    
+    @objc fileprivate func handleShowZoneBorderSwitch(sender: UISwitch) {
+        let isShown = sender.isOn
+        
+        UserDefaults.standard.setIsShownZoneBordersForEditPin(value: isShown)
+        
+        handleShowZoneBorders()
+    }
+    
+    
+    
+    private func handleShowZoneBorders() {
+        
+        if isShownZoneBorders() {
+            for i in 0..<gmsPaths.count {
+                let polyline = GMSPolyline(path: gmsPaths[i])
+                
+                polyline.strokeColor = .red
+                polyline.strokeWidth = 1
+                polyline.map = self.googleMapView
+                
+                self.polylines.append(polyline)
+            }
+            
+            self.showAlert(warnigString: "Zone Boundary Borders On")
+            
+            //            let zoneMarker = self.marker(forZone: "1", position: CLLocationCoordinate2D(latitude: 44, longitude: -78))
+            //            zoneMarker.map = self.googleMapView
+            //            self.zoneMarkers.append(zoneMarker)
+        } else {
+            for polyline in polylines {
+                polyline.map = nil
+                
+            }
+            
+            for zoneMarker in zoneMarkers {
+                zoneMarker.map = nil
+            }
+            
+            self.showAlert(warnigString: "Zone Boundary Borders Off")
+        }
+        
+        
+        
+    }
+    
+    fileprivate func isShownZoneBorders() -> Bool {
+        
+        return UserDefaults.standard.isShownZoneBordersForEditPin()
+    }
+    
+}
+
+//MARK: handle detect zone and township
+extension EditPinController {
+    
+    fileprivate func handleGetZone() -> String {
+        zones.removeAll()
+        determineZoneKmlWith(currentLocation: currentMarkerLocation)
+        let currentZone = handleDetectWhichZone()
+        
+        return currentZone
+    }
+    
+    fileprivate func handleGetTownship() -> String {
+        townships.removeAll()
+        determineTwonshipKmlWith(currentLocation: currentMarkerLocation)
+        
+        let currentTownship = handleDetectWhickTownship()
+        return currentTownship
+    }
+    
+    fileprivate func determineTwonshipKmlWith(currentLocation: CLLocationCoordinate2D) {
+        
+        for i in 0 ..< townshipKml.count {
+            let coordinate = townshipKml[i]
+            
+            let path = self.pathFromCoordinateArray(coordinates: coordinate)
+            
+            if GMSGeometryContainsLocation(currentLocation, path, true) {
+                self.parseStatus = .Township
+                self.handleKmlWith(index: i + 1)
+                
+            }
+        }
+    }
+    
+    fileprivate func determineZoneKmlWith(currentLocation: CLLocationCoordinate2D) {
+        
+        for i in 0 ..< zonesKml.count {
+            let coordinate = zonesKml[i]
+            
+            let path = self.pathFromCoordinateArray(coordinates: coordinate)
+            
+            if GMSGeometryContainsLocation(currentLocation, path, true) {
+                self.parseStatus = .Zone
+                self.handleKmlWith(index: i + 1)
+            }
+        }
+    }
+    
+    fileprivate func handleKmlWith(index: Int) {
+        
+        if parseStatus == .Zone {
+            if let path = Bundle.main.url(forResource: "z\(index)", withExtension: "kml")   {
+                if let parser = XMLParser(contentsOf: path) {
+                    parser.delegate = self
+                    parser.parse()
+                }
+            }
+        } else {
+            if let path = Bundle.main.url(forResource: "t (\(index))", withExtension: "kml")   {
+                if let parser = XMLParser(contentsOf: path) {
+                    parser.delegate = self
+                    parser.parse()
+                }
+            }
+        }
+    }
+    
+    func handleDetectWhickTownship() -> String {
+        
+        var currentTownship = "Unknown Township"
+        
+        if townships.count == 0 {
+            return currentTownship
+        }
+        
+        for i in 0 ..< townships.count {
+            let coordinate = townships[i].townshipCoordinates
+            
+            let path = self.pathFromCoordinateArray(coordinates: coordinate)
+            
+            if GMSGeometryContainsLocation(currentMarkerLocation, path, true) {
+                
+                currentTownship  = townships[i].townshipName
+            }
+        }
+        
+        return currentTownship
+    }
+    
+    func handleDetectWhichZone() -> String {
+        
+        var currentZone = "Unknown Zone"
+        
+        if zones.count == 0 {
+            return currentZone
+        }
+        
+        for zone in zones {
+            if GMSGeometryContainsLocation(currentMarkerLocation, zone.gmsPath, true) {
+                currentZone = zone.zoneName
+            }
+        }
+        
+        return currentZone
+    }
+    
+    func locationFromCoordinate(coordinates: CLLocationCoordinate2D) -> CLLocation {
+        return CLLocation(latitude: coordinates.latitude, longitude: coordinates.longitude)
+    }
+    
+    func pathFromCoordinateArray(coordinates: [CLLocationCoordinate2D]) -> GMSPath {
+        let path = GMSMutablePath()
+        for coordinate in coordinates {
+            path.add(self.locationFromCoordinate(coordinates: coordinate).coordinate)
+        }
+        return path
+    }
+}
+
+//MARK: handle xml parser
+extension EditPinController: XMLParserDelegate {
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+        
+        eName = elementName
+        
+        if elementName == "Placemark" {
+            if parseStatus == .Zone {
+                zoneName = String()
+                coordinate = String()
+            } else {
+                townshipName = String()
+                townshipCoordinate = String()
+            }
+            
+        }
+    }
+    
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        
+        if elementName == "coordinates"{
+            
+            if parseStatus == .Zone {
+                let temp_coordinate = coordinate.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+                coordinate = ""
+                
+                let coordinateTownship = temp_coordinate
+                var coordinateArray = [CLLocationCoordinate2D]()
+                let array = coordinateTownship.components(separatedBy: " ")
+                
+                for i in 0 ..< array.count {
+                    
+                    let coordinateStr = array[i]
+                    let array1 = coordinateStr.components(separatedBy: ",")
+                    
+                    let lon = array1[0]
+                    let lat = array1[1]
+                    
+                    let coordinat = CLLocationCoordinate2D(latitude: Double(lat)!, longitude: Double(lon)!)
+                    coordinateArray.append(coordinat)
+                }
+                let path = self.pathFromCoordinateArray(coordinates: coordinateArray)
+                let zone = Zone(zoneName: zoneName, gmsPath: path)
+                zones.append(zone)
+                
+            } else {
+                let array = townshipCoordinate.components(separatedBy: ",0")
+                var coordinateArray = [CLLocationCoordinate2D]()
+                for i in 0 ..< array.count - 1  {
+                    
+                    let coordinateStr = array[i]
+                    let array1 = coordinateStr.components(separatedBy: ",")
+                    
+                    let lon = array1[0]
+                    let lat = array1[1]
+                    
+                    let coordinat = CLLocationCoordinate2D(latitude: Double(lat)!, longitude: Double(lon)!)
+                    coordinateArray.append(coordinat)
+                }
+                let township = Township()
+                township.townshipName = townshipName
+                township.townshipCoordinates = coordinateArray
+                townships.append(township)
+                
+            }
+        }
+    }
+    
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        
+        //        let data = string.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        if (!string.isEmpty) {
+            if eName == "name" {
+                
+                if parseStatus == .Zone {
+                    zoneName += string
+                } else {
+                    townshipName += string
+                }
+                
+                
+            } else if eName == "coordinates" {
+                if parseStatus == .Zone {
+                    coordinate += string
+                } else {
+                    townshipCoordinate += string
+                }
+                
+            }
+        }
+        
+    }
+}
+
 //MARK: handle views, vars
 extension EditPinController {
     
@@ -724,7 +1299,8 @@ extension EditPinController {
         setupNavbar()
         setGoogleMap()
         setupSegments()
-        
+        setupSwitch() 
+        setInvalidCommandLabel()
     }
     
     fileprivate func setupVars() {
@@ -746,7 +1322,24 @@ extension EditPinController {
         filteredArray = filteredArray.sorted()
     }
     
-     private func setupSegments() {
+    private func setupSwitch() {
+        
+        view.addSubview(showBorderSwitch)
+        
+        showBorderSwitch.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        showBorderSwitch.heightAnchor.constraint(equalTo: mapTypeSegement.heightAnchor).isActive = true
+        showBorderSwitch.centerYAnchor.constraint(equalTo: mapTypeSegement.centerYAnchor).isActive = true
+        showBorderSwitch.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -5).isActive = true
+        
+        if isShownZoneBorders() {
+            showBorderSwitch.isOn = true
+        } else {
+            showBorderSwitch.isOn = false
+        }
+        handleShowZoneBorders()
+    }
+    
+    private func setupSegments() {
         
         view.addSubview(mapTypeSegement)
         

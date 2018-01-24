@@ -19,8 +19,10 @@ class LakePlace {
     let exception: String
     let distance: Double
     let type: String
+    let typeId: String
+    let species: String?
     
-    init(lakeName: String, townshipName: String, opportunity: String, exception: String, coordinate: CLLocationCoordinate2D, distance: Double, type: String) {
+    init(lakeName: String, townshipName: String, opportunity: String, exception: String, coordinate: CLLocationCoordinate2D, distance: Double, type: String, typeId: String, species: String?) {
         self.lakeName = lakeName
         self.townshipName = townshipName
         self.opportunity = opportunity
@@ -28,6 +30,8 @@ class LakePlace {
         self.exception = exception
         self.distance = distance
         self.type = type
+        self.typeId = typeId
+        self.species = species
     }
     
     

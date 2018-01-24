@@ -8,6 +8,16 @@
 
 import Foundation
 
+struct OldPin {
+    
+    let lon: String?
+    let lat: String?
+    let township: String?
+    let zone: String?
+    
+}
+
+
 struct Infos: Decodable {
     let new_pins: [Info]?
     let edit_pins: [Info]?
@@ -17,11 +27,12 @@ struct Info: Decodable {
     let exceptions: exceptions?
     let features: features?
     let lakes: lakes?
-    let zones_sandle: zones_sandle?
+    let zones_sandl: zones_sandl?
 }
 
-struct exceptions: Decodable {
-    let id: Int?
+struct exceptions: Decodable, Encodable {
+    let id: String?
+    let waterbody: String?
     let details: String?
     let zone: String?
     let lon: String?
@@ -30,23 +41,30 @@ struct exceptions: Decodable {
     let townships: String?
 }
 
-struct features: Decodable {
-    let id: Int?
+struct features: Decodable, Encodable {
+    let id: String?
+    let title: String?
+    let info: String?
     let lon: String?
     let lat: String?
+    let icon: String?
     let species: String?
     let zones: String?
     let lakes: String?
     let townships: String?
 }
 
-struct lakes: Decodable {
-    let id: Int?
+struct lakes: Decodable, Encodable {
+    let id: String?
     let name: String?
+    let lon: String?
+    let lat: String?
 }
 
-struct zones_sandle: Decodable {
-    let id: Int?
+
+
+struct zones_sandl: Decodable, Encodable {
+    let id: String?
     let zone: String?
     let species: String?
     let open: String?

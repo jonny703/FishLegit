@@ -191,6 +191,8 @@ class HomeController: UIViewController, HADropDownDelegate {
         setupViews()
         handleZonesKml()
         handleTownshipKmls()
+        
+        handleExceptionsAndOpportunities()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -515,7 +517,13 @@ extension HomeController {
 extension HomeController {
     func getExceptions(withzone zone: String) -> Int {
         var num = 0;
+        
+        //get exceptions in a zone
+        /*
         let query = String(format: "Select count(*) as count from exceptions where zone=%@", zone)
+        */
+        
+        let query = "Select count(*) as count from exceptions"
         let array = SCSQLite.selectRowSQL(query)! as NSArray
         if array.count > 0 {
             let dictionary = array[0] as! NSDictionary
@@ -533,11 +541,21 @@ extension HomeController {
         
         var query = String()
         
+        //get opportunity in a zone
+        /*
         if isSelectedSpecy == true {
             query = String(format: "Select count(*) as count from features a INNER JOIN species b ON a.species = b.id where a.zones=%d And b.name=\'%@\'", Int(zone)!, species[sepecyIndex])
         } else {
             query = String(format: "Select count(*) as count from features where zones=%@", zone)
         }
+        */
+        
+        if isSelectedSpecy == true {
+            query = String(format: "Select count(*) as count from features a INNER JOIN species b ON a.species = b.id where b.name=\'%@\'", species[sepecyIndex])
+        } else {
+            query = "Select count(*) as count from features"
+        }
+        
         
         
         let array = SCSQLite.selectRowSQL(query)! as NSArray
@@ -728,8 +746,6 @@ extension HomeController: XMLParserDelegate {
                 
                 let character = CharacterSet(charactersIn: "ZONE")
                 currentZone = zones[i].zoneName.trimmingCharacters(in: character)
-                
-                handleExceptionsAndOpportunities()
                 
                 return
                 

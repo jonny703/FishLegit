@@ -21,6 +21,8 @@ extension UserDefaults {
         case email
         case password
         case isShownZoneBorders
+        case isShownZoneBordersForNewPin
+        case isShownZoneBordersForEditPin
     }
     
     //MARK: check login
@@ -43,6 +45,24 @@ extension UserDefaults {
     
     func isShownZoneBorders() -> Bool {
         return bool(forKey: UserDefaultsKeys.isShownZoneBorders.rawValue)
+    }
+    
+    func setIsShownZoneBordersForNewPin(value: Bool) {
+        set(value, forKey: UserDefaultsKeys.isShownZoneBordersForNewPin.rawValue)
+        synchronize()
+    }
+    
+    func isShownZoneBordersForNewPin() -> Bool {
+        return bool(forKey: UserDefaultsKeys.isShownZoneBordersForNewPin.rawValue)
+    }
+    
+    func setIsShownZoneBordersForEditPin(value: Bool) {
+        set(value, forKey: UserDefaultsKeys.isShownZoneBordersForEditPin.rawValue)
+        synchronize()
+    }
+    
+    func isShownZoneBordersForEditPin() -> Bool {
+        return bool(forKey: UserDefaultsKeys.isShownZoneBordersForEditPin.rawValue)
     }
     
     //MARK: agree disclaimar?

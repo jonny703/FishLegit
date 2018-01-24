@@ -28,19 +28,19 @@ class GoogleDataProvider {
         var exceptionQuery = ""
         
         if kind == SearchStatus.Lake || kind == SearchStatus.EditLake {
-            opportunityQuery = String(format: "SELECT b.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.lakes=%d", id)
+            opportunityQuery = String(format: "SELECT a.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.lakes=%d", id)
             
-            exceptionQuery = String(format: "SELECT b.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id where a.lakes=%d", id)
+            exceptionQuery = String(format: "SELECT a.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id where a.lakes=%d", id)
         } else if kind == SearchStatus.Township {
-            opportunityQuery = String(format: "SELECT b.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.townships=%d", id)
+            opportunityQuery = String(format: "SELECT a.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.townships=%d", id)
             
-            exceptionQuery = String(format: "SELECT b.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id where a.townships=%d", id)
+            exceptionQuery = String(format: "SELECT a.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id where a.townships=%d", id)
         } else if kind == SearchStatus.Species {
-            opportunityQuery = String(format: "SELECT b.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.species=%d", id)
+            opportunityQuery = String(format: "SELECT a.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id where a.species=%d", id)
         } else if kind == SearchStatus.Other {
-            opportunityQuery = "SELECT b.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id"
+            opportunityQuery = "SELECT a.id, a.lon, a.lat, a.species, a.townships, b.name FROM features a INNER JOIN lakes b ON a.lakes=b.id"
             
-            exceptionQuery = "SELECT b.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id"
+            exceptionQuery = "SELECT a.id, a.lon, a.lat, a.details, a.townships, b.name FROM exceptions a INNER JOIN lakes b ON a.lakes=b.id"
         }
         
         let opportunityArray: NSArray = SCSQLite.selectRowSQL(opportunityQuery)! as NSArray
@@ -56,6 +56,7 @@ class GoogleDataProvider {
             let lakeName = dictionary.value(forKey: "name") as? String
             let specyId = dictionary.value(forKey: "species") as? String
             let townshipStr = dictionary.value(forKey: "townships") as? String
+            guard let typeId = dictionary.value(forKey: "id") as? Int else { return }
             
             if lon != "" {
                 if let lon = lon, let lat = lat {
@@ -64,7 +65,7 @@ class GoogleDataProvider {
                         let latNumber3 = self.getLocationDegreeWith(number: latNumber)
                         
                         let dis = self.getDistanceBetweenLakesWith(lat: latNumber3, lon: lonNumber3, myLoation: mylocation)
-                        let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: specyId, detail: "", lakeName: lakeName!, latNumber3: latNumber3, lonNumber3: lonNumber3, dis: dis, type: LakeType.opportunity.rawValue)
+                        let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: specyId, detail: "", lakeName: lakeName!, latNumber3: latNumber3, lonNumber3: lonNumber3, dis: dis, type: LakeType.opportunity.rawValue, typeId: String(typeId))
                         
                         if kind == SearchStatus.EditLake {
                             places.append(place)
@@ -78,7 +79,7 @@ class GoogleDataProvider {
                 }
             } else {
                 
-                let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: specyId, detail: "", lakeName: lakeName!, latNumber3: 0, lonNumber3: 0, dis: 40000, type: LakeType.opportunity.rawValue)
+                let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: specyId, detail: "", lakeName: lakeName!, latNumber3: 0, lonNumber3: 0, dis: 40000, type: LakeType.opportunity.rawValue, typeId: String(typeId))
                 if kind == SearchStatus.EditLake {
                     places.append(place)
                 } else {
@@ -100,6 +101,7 @@ class GoogleDataProvider {
             let lakeName = dictionary.value(forKey: "name") as? String
             let detail = dictionary.value(forKey: "details") as? String
             let townshipStr = dictionary.value(forKey: "townships") as? String
+            guard let typeId = dictionary.value(forKey: "id") as? Int else { return }
             
             if lon != "" {
                 if let lon = lon, let lat = lat {
@@ -108,7 +110,7 @@ class GoogleDataProvider {
                         let latNumber3 = self.getLocationDegreeWith(number: latNumber)
                         
                         let dis = self.getDistanceBetweenLakesWith(lat: latNumber3, lon: lonNumber3, myLoation: mylocation)
-                        let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: "", detail: detail, lakeName: lakeName!, latNumber3: latNumber3, lonNumber3: lonNumber3, dis: dis, type: LakeType.exception.rawValue)
+                        let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: "", detail: detail, lakeName: lakeName!, latNumber3: latNumber3, lonNumber3: lonNumber3, dis: dis, type: LakeType.exception.rawValue, typeId: String(typeId))
                         if kind == SearchStatus.EditLake {
                             places.append(place)
                         } else {
@@ -119,7 +121,7 @@ class GoogleDataProvider {
                     }
                 }
             } else {
-                let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: "", detail: detail, lakeName: lakeName!, latNumber3: 0, lonNumber3: 0, dis: 40000, type: LakeType.exception.rawValue)
+                let place: [String: Any] = self.getPlaceWith(townshipStr: townshipStr, specyId: "", detail: detail, lakeName: lakeName!, latNumber3: 0, lonNumber3: 0, dis: 40000, type: LakeType.exception.rawValue, typeId: String(typeId))
                 if kind == SearchStatus.EditLake {
                     places.append(place)
                 } else {
@@ -132,7 +134,7 @@ class GoogleDataProvider {
         
         for var place: [String: Any] in places {
             
-            let lakePlace = LakePlace(lakeName: place["lakeName"] as! String, townshipName: place["townshipName"] as! String, opportunity: place["opportunity"] as! String, exception: place["exception"] as! String, coordinate: place["coordinate"] as! CLLocationCoordinate2D, distance: place["distance"] as! Double, type: place["type"] as! String)
+            let lakePlace = LakePlace(lakeName: place["lakeName"] as! String, townshipName: place["townshipName"] as! String, opportunity: place["opportunity"] as! String, exception: place["exception"] as! String, coordinate: place["coordinate"] as! CLLocationCoordinate2D, distance: place["distance"] as! Double, type: place["type"] as! String, typeId: place["typeId"] as! String, species: place["species"] as? String)
             
             placesArray.append(lakePlace)
         }
@@ -148,7 +150,7 @@ class GoogleDataProvider {
         }
     }
     
-    func getPlaceWith(townshipStr: String?, specyId: String?, detail: String?, lakeName: String, latNumber3: Double, lonNumber3: Double, dis: Double, type: String) -> [String: Any] {
+    func getPlaceWith(townshipStr: String?, specyId: String?, detail: String?, lakeName: String, latNumber3: Double, lonNumber3: Double, dis: Double, type: String, typeId: String) -> [String: Any] {
         
         var townshipName = ""
         if let townshipId = townshipStr {
@@ -163,12 +165,12 @@ class GoogleDataProvider {
         if type == LakeType.opportunity.rawValue {
             let opportunity = self.getOpportunityWith(specyName: specyName, lat: latNumber3, lan: lonNumber3)
             
-            let place: [String: Any] = ["lakeName":  lakeName, "townshipName": townshipName, "coordinate": CLLocationCoordinate2D(latitude: CLLocationDegrees(latNumber3), longitude: CLLocationDegrees(lonNumber3)), "specyName": specyName, "distance": dis, "opportunity": opportunity, "exception": "", "type": type]
+            let place: [String: Any] = ["lakeName":  lakeName, "townshipName": townshipName, "coordinate": CLLocationCoordinate2D(latitude: CLLocationDegrees(latNumber3), longitude: CLLocationDegrees(lonNumber3)), "specyName": specyName, "distance": dis, "opportunity": opportunity, "exception": "", "type": type, "typeId": typeId, "species": specyName]
             return place
         } else {
             let exception = self.getExceptionWith(detail: detail!, townshipName: townshipName)
             
-            let place: [String: Any] = ["lakeName":  lakeName, "townshipName": townshipName, "coordinate": CLLocationCoordinate2D(latitude: CLLocationDegrees(latNumber3), longitude: CLLocationDegrees(lonNumber3)), "specyName": specyName, "distance": dis, "opportunity": "", "exception": exception, "type": type]
+            let place: [String: Any] = ["lakeName":  lakeName, "townshipName": townshipName, "coordinate": CLLocationCoordinate2D(latitude: CLLocationDegrees(latNumber3), longitude: CLLocationDegrees(lonNumber3)), "specyName": specyName, "distance": dis, "opportunity": "", "exception": exception, "type": type, "typeId": typeId, "species": ""]
             return place
         }
     }
