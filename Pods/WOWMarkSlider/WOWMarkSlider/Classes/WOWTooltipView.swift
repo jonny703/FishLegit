@@ -76,9 +76,9 @@ open class WOWTooltipView: UIView {
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.alignment = .center
             
-            let attrs = [NSAttributedStringKey.font.rawValue: font,
+            let attrs = [NSAttributedStringKey.font: font,
                          NSAttributedStringKey.paragraphStyle: paragraphStyle,
-                         NSAttributedStringKey.foregroundColor: textColor] as! [NSAttributedStringKey : Any]
+                         NSAttributedStringKey.foregroundColor: textColor] as [NSAttributedStringKey : Any]
             text.draw(in:textRect, withAttributes: attrs)
         }
     }

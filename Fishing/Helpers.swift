@@ -7,7 +7,7 @@
 
 import UIKit
 
-func getIdWithName(name: String, tableName: String) -> Int{
+func getIdWithName(name: String, tableName: String) -> Int {
     SCSQLite.initWithDatabase("fishy.sqlite3")
     let query = "SELECT id, name FROM " + tableName + " where name=" + "\"" + name + "\""
     let array = SCSQLite.selectRowSQL(query)! as NSArray

@@ -6,6 +6,36 @@
 //  Copyright © 2017 johnik703. All rights reserved.
 //
 
+/*
+{
+    id: "5",
+    user_id: "24",
+    lake_id: "0",
+    name: "lake",
+    lon: "12.32",
+    lat: "332.32",
+    created: "2018-01-08 05:22:17",
+    active: "-1",
+    type: "opportunity",
+    edit_new: "New",
+    zone: "15",
+    township: "town",
+    detail: "detail",
+    id2: "5",
+    user_id2: "24",
+    lake_id2: "0",
+    name2: "lake",
+    lon2: "0",
+    lat2: "0",
+    created2: "2018-01-08 05:22:17",
+    active2: "-1",
+    type2: "opportunity",
+    zone2: "14",
+    township2: "t",
+    detail2: "detail"
+}
+*/
+
 import UIKit
 import GoogleMaps
 import GooglePlaces
@@ -19,11 +49,17 @@ protocol CreatePinDelegate {
 }
 
 class CreatePinController: UIViewController {
+    
+    var polylines = [GMSPolyline]()
+    var zoneMarkers = [GMSMarker]()
+    var gmsPaths = [GMSPath]()
+    
     let reachAbility = Reachability()!
     var contents: Contents?
     var lakeMarker: LakeMarker?
     
     var currentLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
+    var currentMarkerLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
     
     var titleLabel: UILabel!
     var alertController: JHTAlertController?
@@ -38,6 +74,16 @@ class CreatePinController: UIViewController {
     var townshipName = String()
     var townshipCoordinate = String()
     var townships = [Township]()
+    
+    lazy var showBorderSwitch: UISwitch = {
+        let borderSwitch = UISwitch()
+        borderSwitch.onTintColor = StyleGuideManager.fishLegitDefultBlueColor
+        borderSwitch.backgroundColor = .gray
+        borderSwitch.layer.cornerRadius = 16
+        borderSwitch.translatesAutoresizingMaskIntoConstraints = false
+        borderSwitch.addTarget(self, action: #selector(handleShowZoneBorderSwitch(sender:)), for: .valueChanged)
+        return borderSwitch
+    }()
     
     lazy var googleMapView: GMSMapView = {
         
@@ -62,10 +108,26 @@ class CreatePinController: UIViewController {
         return segement
     }()
     
+    let invalidCommandLabel: UILabel = {
+        
+        let label = UILabel()
+        label.textAlignment = .center
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.backgroundColor = .lightGray
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.layer.cornerRadius = 20
+        label.layer.masksToBounds = true
+        return label
+        
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupViews()
+        
+        self.handleCreateMarker()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -78,6 +140,45 @@ class CreatePinController: UIViewController {
         self.removeKeyboardObserver()
     }
     
+}
+
+//MARK: handle zone borders feedback
+extension CreatePinController {
+    
+    func setInvalidCommandLabel() {
+        view.addSubview(invalidCommandLabel)
+        
+        invalidCommandLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        invalidCommandLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50).isActive = true
+        invalidCommandLabel.widthAnchor.constraint(equalToConstant: 250).isActive = true
+        invalidCommandLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        invalidCommandLabel.alpha = 0
+    }
+    
+    func showAlert(warnigString: String) {
+        
+        invalidCommandLabel.text = warnigString
+        fadeViewInThenOut(view: invalidCommandLabel, delay: 3)
+        
+    }
+    
+    func fadeViewInThenOut(view : UIView, delay: TimeInterval) {
+        
+        let animationDuration = 0.25
+        
+        // Fade in the view
+        UIView.animate(withDuration: animationDuration, animations: { () -> Void in
+            view.alpha = 1
+        }) { (Bool) -> Void in
+            
+            // After the animation completes, fade out the view after a delay
+            
+            UIView.animate(withDuration: animationDuration, delay: delay, options: .curveEaseInOut, animations: { () -> Void in
+                view.alpha = 0
+            }, completion: nil)
+        }
+    }
 }
 
 //MARK: handle segement
@@ -154,9 +255,9 @@ extension CreatePinController {
     fileprivate func handleShowResetLocationAlert() {
 
         guard let currentMarker = self.lakeMarker else {
-            self.showJHTAlertDefaultWithIcon(message: "No created contents.\nDo you want to create contents?", firstActionTitle: "No", secondActionTitle: "Yes", action: { (action) in
+            self.showJHTAlertDefaultWithIcon(message: "No Marker/Pin created.\nDo you want to create Marker/Pin?", firstActionTitle: "No", secondActionTitle: "Yes", action: { (action) in
 
-                self.handleGoingCreateContentController()
+                self.handleCreateMarker()
             })
             return
         }
@@ -257,7 +358,7 @@ extension CreatePinController {
         let place = marker.place
         let coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(lat), longitude: CLLocationDegrees(lon))
         
-        let lakePlace = LakePlace(lakeName: place.lakeName , townshipName: place.townshipName , opportunity: place.opportunity , exception: place.exception, coordinate: coordinate , distance: 10.0 , type: place.type )
+        let lakePlace = LakePlace(lakeName: place.lakeName , townshipName: place.townshipName , opportunity: place.opportunity , exception: place.exception, coordinate: coordinate , distance: 10.0 , type: place.type, typeId: "0", species: place.species)
         return lakePlace
         
     }
@@ -333,14 +434,20 @@ extension CreatePinController {
     
     fileprivate func handleCreateMarker() {
         
+        //get centerCoordinate from center point
+        /*
         let centerPoint = self.googleMapView.center
         let centerCoordinate = googleMapView.projection.coordinate(for: centerPoint)
-        
+        */
+ 
+        currentMarkerLocation = self.currentLocation
         
         let contents = Contents()
-        contents.lakeName = "unknown"
-        contents.latitude = centerCoordinate.latitude
-        contents.longitude = centerCoordinate.longitude
+        contents.lakeName = "Unknown Lake"
+        contents.latitude = currentMarkerLocation.latitude
+        contents.longitude = currentMarkerLocation.longitude
+        contents.townshipName = self.handleGetTownship()
+        contents.zoneName = self.handleGetZone()
         self.contents = contents
         
         let lakePlace = self.setLakePlaceWith(contents: contents)
@@ -350,23 +457,12 @@ extension CreatePinController {
         self.focusLakeMarker()
     }
     
-    fileprivate func handleGoingCreateContentController() {
-        
-        let layout = UICollectionViewFlowLayout()
-        let createContentController = CreateContentController(collectionViewLayout: layout)
-        createContentController.createPinDelegate = self
-        let navController = UINavigationController(rootViewController: createContentController)
-        
-        present(navController, animated: true, completion: nil)
-        
-    }
-    
     fileprivate func handleUpdatingContents() {
         
         guard let contents = self.contents else {
-            self.showJHTAlertDefaultWithIcon(message: "No created contents.\nDo you want to create contents?", firstActionTitle: "No", secondActionTitle: "Yes", action: { (action) in
+            self.showJHTAlertDefaultWithIcon(message: "No Marker/Pin created.\nDo you want to create Marker/Pin?", firstActionTitle: "No", secondActionTitle: "Yes", action: { (action) in
                 
-                self.handleGoingCreateContentController()
+                self.handleCreateMarker()
             })
             return
         }
@@ -427,8 +523,7 @@ extension CreatePinController {
             type = lakeType
         }
         
-        
-        let lakePlace = LakePlace(lakeName: lakeName, townshipName: townshipName, opportunity: opportunity, exception: exception, coordinate: coordinate, distance: 10, type: type)
+        let lakePlace = LakePlace(lakeName: lakeName, townshipName: townshipName, opportunity: opportunity, exception: exception, coordinate: coordinate, distance: 10, type: type, typeId: "0", species: contents.species)
         
         return lakePlace
     }
@@ -436,7 +531,7 @@ extension CreatePinController {
     fileprivate func focusLakeMarker() {
         if let marker = self.lakeMarker {
             self.googleMapView.animate(toLocation: marker.place.coordinate)
-            
+            self.currentMarkerLocation = marker.place.coordinate
         } else {
             self.googleMapView.animate(toLocation: currentLocation)
         }
@@ -447,6 +542,7 @@ extension CreatePinController {
     fileprivate func resetLakeMarkerWith(marker: LakeMarker) {
         self.googleMapView.clear()
         marker.map = self.googleMapView
+        handleShowZoneBorders()
         self.lakeMarker = marker
     }
     
@@ -476,14 +572,21 @@ extension CreatePinController: CreatePinDelegate {
 
 //MARK: handle detect zone and township
 extension CreatePinController {
-    @objc func handleZoneAndTownship() {
-        
+    
+    fileprivate func handleGetZone() -> String {
         zones.removeAll()
-        determineZoneKmlWith(currentLocation: currentLocation)
+        determineZoneKmlWith(currentLocation: currentMarkerLocation)
+        let currentZone = handleDetectWhichZone()
         
+        return currentZone
+    }
+    
+    fileprivate func handleGetTownship() -> String {
         townships.removeAll()
-        determineTwonshipKmlWith(currentLocation: currentLocation)
-        handleDetectWhickTownship()
+        determineTwonshipKmlWith(currentLocation: currentMarkerLocation)
+        
+        let currentTownship = handleDetectWhickTownship()
+        return currentTownship
     }
     
     fileprivate func determineTwonshipKmlWith(currentLocation: CLLocationCoordinate2D) {
@@ -497,11 +600,8 @@ extension CreatePinController {
                 self.parseStatus = .Township
                 self.handleKmlWith(index: i + 1)
                 
-            } else {
-                let text = "You are in unknown Township"
             }
         }
-        
     }
     
     fileprivate func determineZoneKmlWith(currentLocation: CLLocationCoordinate2D) {
@@ -514,9 +614,6 @@ extension CreatePinController {
             if GMSGeometryContainsLocation(currentLocation, path, true) {
                 self.parseStatus = .Zone
                 self.handleKmlWith(index: i + 1)
-                
-            } else {
-                let currentZone = "0"
             }
         }
     }
@@ -540,46 +637,43 @@ extension CreatePinController {
         }
     }
     
-    func handleDetectWhickTownship() {
+    func handleDetectWhickTownship() -> String {
         
-        print("count", townships.count)
+        var currentTownship = "Unknown Township"
+        
+        if townships.count == 0 {
+            return currentTownship
+        }
         
         for i in 0 ..< townships.count {
             let coordinate = townships[i].townshipCoordinates
             
             let path = self.pathFromCoordinateArray(coordinates: coordinate)
             
-            if GMSGeometryContainsLocation(currentLocation, path, true) {
+            if GMSGeometryContainsLocation(currentMarkerLocation, path, true) {
                 
-                let text = "You are in " + townships[i].townshipName
-                
-                let currentTownship = getIdStringWithName(name: townships[i].townshipName, tableName: "townships")
-                
-                return
-                
-            } else {
-                
-                let text = "You are in unknown Township"
+                currentTownship  = townships[i].townshipName
             }
         }
         
+        return currentTownship
     }
     
-    func handleDetectWhichZone(withZone zone: Zone) {
+    func handleDetectWhichZone() -> String {
         
-        if GMSGeometryContainsLocation(currentLocation, zone.gmsPath, true) {
-            
-            let text = "You are in " + zone.zoneName
-            
-            let character = CharacterSet(charactersIn: "ZONE")
-            let currentZone = zone.zoneName.trimmingCharacters(in: character)
-            return
-            
-        } else {
-            
-            let text = "You are in unknown ZONE"
-            let currentZone = "0"
+        var currentZone = "Unknown Zone"
+        
+        if zones.count == 0 {
+            return currentZone
         }
+        
+        for zone in zones {
+            if GMSGeometryContainsLocation(currentMarkerLocation, zone.gmsPath, true) {
+                currentZone = zone.zoneName
+            }
+        }
+        
+        return currentZone
     }
     
     func locationFromCoordinate(coordinates: CLLocationCoordinate2D) -> CLLocation {
@@ -651,7 +745,6 @@ extension CreatePinController: XMLParserDelegate {
                     let lon = array1[0]
                     let lat = array1[1]
                     
-                    
                     let coordinat = CLLocationCoordinate2D(latitude: Double(lat)!, longitude: Double(lon)!)
                     coordinateArray.append(coordinat)
                 }
@@ -661,8 +754,6 @@ extension CreatePinController: XMLParserDelegate {
                 townships.append(township)
                 
             }
-            
-            
         }
     }
     
@@ -697,27 +788,18 @@ extension CreatePinController: UIAdaptivePresentationControllerDelegate {
     
     @objc fileprivate func handlePopoverMenu(sender: UIBarButtonItem) {
         
-        let menus = ["Create Marker/Pin", "Edit Marker/Pin", "Reset Location", "Submit"]
+        let menus = ["Marker/Pin Data"]
         let popoverMenuController = PopOverViewController.instantiate()
         popoverMenuController.setTitles(menus)
         popoverMenuController.setSeparatorStyle(.singleLine)
         popoverMenuController.popoverPresentationController?.barButtonItem = sender
-        popoverMenuController.preferredContentSize = CGSize(width: 170, height: 180)
+        popoverMenuController.preferredContentSize = CGSize(width: 170, height: 45)
         popoverMenuController.presentationController?.delegate = self
         popoverMenuController.completionHandler = { selectRow in
             
             switch (selectRow) {
             case 0:
-                self.handleCreateMarker()
-                break
-            case 1:
                 self.handleUpdatingContents()
-                break
-            case 2:
-                self.handleShowResetLocationAlert()
-                break
-            case 3:
-                self.handleSubmit()
                 break
             default:
                 break
@@ -762,12 +844,26 @@ extension CreatePinController: GMSMapViewDelegate {
     }
     
     private func resetCurrentMarkerWith(currentMarker: LakeMarker, marker: GMSMarker) {
+        
+        KRProgressHUD.show()
+        
         let lakePlace = self.resetLakePlaceWith(lat: marker.position.latitude, lon: marker.position.longitude, marker: currentMarker)
         let tempMarker = self.setMarkerWith(place: lakePlace)
         self.lakeMarker = tempMarker
         
+        self.currentMarkerLocation = tempMarker.place.coordinate
+        
         self.contents?.latitude = marker.position.latitude
         self.contents?.longitude = marker.position.longitude
+        
+        perform(#selector(setTownshipZone), with: nil, afterDelay: 1.0)
+    }
+    
+    @objc private func setTownshipZone() {
+        self.contents?.townshipName = self.handleGetTownship()
+        self.contents?.zoneName = self.handleGetZone()
+        
+        KRProgressHUD.dismiss()
     }
 }
 
@@ -785,7 +881,7 @@ extension CreatePinController {
         
         guard let userId = UserDefaults.standard.getUserId() else { return }
         guard let contents = self.contents else {
-            self.showJHTAlerttOkayWithIcon(message: "No contents to submit.")
+            self.showJHTAlerttOkayWithIcon(message: "No Marker/Pin to submit.")
             return
         }
         
@@ -805,7 +901,23 @@ extension CreatePinController {
         let lon = String(format: "%f", longitude)
         let lat = String(format: "%f", latitude)
         
-        let requestStr = String(format: WebService.createPinSubmit.rawValue, userId, lakeName, lon, lat, type, zone, township, detail)
+        var townshipId = township
+        if township != "Unknown Township" {
+            townshipId = getIdStringWithName(name: township, tableName: "townships")
+        } else {
+            townshipId = "0"
+        }
+        
+        var zoneId = zone
+        if zone != "Unknown Zone" {
+            let character = CharacterSet(charactersIn: "ZONE")
+            zoneId = zone.trimmingCharacters(in: character)
+        } else {
+            zoneId = "0"
+        }
+        
+        
+        let requestStr = String(format: WebService.createPinSubmit.rawValue, userId, lakeName, lon, lat, type, zoneId, townshipId, detail)
         guard let urlStr = requestStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
             return
@@ -814,6 +926,8 @@ extension CreatePinController {
             self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
             return
         }
+        
+        print("create pin: ", requestStr)
         
         KRProgressHUD.show()
         
@@ -862,6 +976,56 @@ extension CreatePinController {
     
 }
 
+//MARK: handle shown zone borders
+extension CreatePinController {
+    
+    @objc fileprivate func handleShowZoneBorderSwitch(sender: UISwitch) {
+        let isShown = sender.isOn
+        
+        UserDefaults.standard.setIsShownZoneBordersForNewPin(value: isShown)
+        
+        handleShowZoneBorders()
+    }
+    
+    private func handleShowZoneBorders() {
+        
+        if isShownZoneBorders() {
+            for i in 0..<gmsPaths.count {
+                let polyline = GMSPolyline(path: gmsPaths[i])
+                
+                polyline.strokeColor = .red
+                polyline.strokeWidth = 1
+                polyline.map = self.googleMapView
+                
+                self.polylines.append(polyline)
+            }
+            
+            //            let zoneMarker = self.marker(forZone: "1", position: CLLocationCoordinate2D(latitude: 44, longitude: -78))
+            //            zoneMarker.map = self.googleMapView
+            //            self.zoneMarkers.append(zoneMarker)
+            
+            self.showAlert(warnigString: "Zone Boundary Borders On")
+        } else {
+            for polyline in polylines {
+                polyline.map = nil
+            }
+            
+            for zoneMarker in zoneMarkers {
+                zoneMarker.map = nil
+            }
+            
+            self.showAlert(warnigString: "Zone Boundary Borders Off")
+        }
+        
+    }
+    
+    fileprivate func isShownZoneBorders() -> Bool {
+        
+        return UserDefaults.standard.isShownZoneBordersForNewPin()
+    }
+    
+}
+
 //MARK: handle views, vars
 extension CreatePinController {
     
@@ -869,7 +1033,27 @@ extension CreatePinController {
         setupNavbar()
         setGoogleMap()
         setupSegments()
+        setupSwitch()
+        handleShowZoneBorders()
+        setInvalidCommandLabel()
+    }
+    
+    
+    
+    private func setupSwitch() {
         
+        view.addSubview(showBorderSwitch)
+        
+        showBorderSwitch.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        showBorderSwitch.heightAnchor.constraint(equalTo: mapTypeSegement.heightAnchor).isActive = true
+        showBorderSwitch.centerYAnchor.constraint(equalTo: mapTypeSegement.centerYAnchor).isActive = true
+        showBorderSwitch.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -5).isActive = true
+        
+        if isShownZoneBorders() {
+            showBorderSwitch.isOn = true
+        } else {
+            showBorderSwitch.isOn = false
+        }
     }
     
     private func setupSegments() {

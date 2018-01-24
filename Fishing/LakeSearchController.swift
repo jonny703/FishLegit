@@ -32,6 +32,7 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
         case SearchSpecies
     }
     var selectedButtonState: SelectedButtonTag?
+    var canEdit = false
     
     var polylines = [GMSPolyline]()
     var zoneMarkers = [GMSMarker]()
@@ -69,6 +70,8 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
     let dataProvider = GoogleDataProvider()
     let searchController = UISearchController(searchResultsController: nil)
     
+    let reachAbility = Reachability()!
+    
     lazy var googleMapView: GMSMapView = {
         
         var map = GMSMapView()
@@ -98,25 +101,6 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
         view.layer.masksToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
-        
-    }()
-    
-    let showNearestSlider: WOWMarkSlider = {
-        
-        let slider = WOWMarkSlider()
-        slider.markColor = .red
-        slider.markPositions = [0, 25, 50, 75, 100]
-        slider.lineCap = .square
-        slider.height = 10.0
-        slider.markWidth = 3.0
-        slider.minimumValue = 0
-        slider.maximumValue = 125
-        slider.selectedBarColor = .darkGray
-        slider.unselectedBarColor = .white
-        slider.handlerColor = .black
-        
-        slider.translatesAutoresizingMaskIntoConstraints = false
-        return slider
         
     }()
     
@@ -271,7 +255,7 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
     let searchButton: UIButton = {
         let button = UIButton(type: .system)
         button.titleLabel?.numberOfLines = 0
-        let title = NSLocalizedString("Show Nearest\n        " + String(25) + "Km", comment: "")
+        let title = NSLocalizedString("Show Nearest\n        " + String(100) + "Km", comment: "")
         button.setTitle(title, for: .normal)
         button.addTarget(self, action: #selector(searchLakes), for: .touchUpInside)
         button.sizeToFit()
@@ -300,6 +284,20 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
         button.addTarget(self, action: #selector(handleShowAndHideZoneInfo), for: .touchUpInside
         )
         return button
+    }()
+    
+    let invalidCommandLabel: UILabel = {
+        
+        let label = UILabel()
+        label.textAlignment = .center
+        label.textColor = .white
+        label.font = UIFont.systemFont(ofSize: 18)
+        label.backgroundColor = .lightGray
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.layer.cornerRadius = 20
+        label.layer.masksToBounds = true
+        return label
+        
     }()
     
     override func viewDidLoad() {
@@ -346,12 +344,13 @@ extension LakeSearchController {
         
         setupSecondNavigationBar()
         setupViews()
+        setupSwitch()
         setupTableView()
         setupSpeciesContanierView()
         setupZoneInfoView()
         setupZoneInfoLabel()
         setupShowNearestSlider()
-        setupSwitch()
+        setInvalidCommandLabel()
     }
     
     private func setupSwitch() {
@@ -580,6 +579,45 @@ extension LakeSearchController {
     }
 }
 
+//MARK: handle zone borders feedback
+extension LakeSearchController {
+    
+    func setInvalidCommandLabel() {
+        view.addSubview(invalidCommandLabel)
+        
+        invalidCommandLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        invalidCommandLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50).isActive = true
+        invalidCommandLabel.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        invalidCommandLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        invalidCommandLabel.alpha = 0
+    }
+    
+    func showAlert(warnigString: String) {
+        
+        invalidCommandLabel.text = warnigString
+        fadeViewInThenOut(view: invalidCommandLabel, delay: 3)
+        
+    }
+    
+    func fadeViewInThenOut(view : UIView, delay: TimeInterval) {
+        
+        let animationDuration = 0.25
+        
+        // Fade in the view
+        UIView.animate(withDuration: animationDuration, animations: { () -> Void in
+            view.alpha = 1
+        }) { (Bool) -> Void in
+            
+            // After the animation completes, fade out the view after a delay
+            
+            UIView.animate(withDuration: animationDuration, delay: delay, options: .curveEaseInOut, animations: { () -> Void in
+                view.alpha = 0
+            }, completion: nil)
+        }
+    }
+}
+
 //MARK: handle shown zone borders
 extension LakeSearchController {
     
@@ -604,9 +642,11 @@ extension LakeSearchController {
                 self.polylines.append(polyline)
             }
             
-            let zoneMarker = self.marker(forZone: "1", position: CLLocationCoordinate2D(latitude: 44, longitude: -78))
-            zoneMarker.map = self.googleMapView
-            self.zoneMarkers.append(zoneMarker)
+            self.showAlert(warnigString: "Zone Boundary Borders On")
+            
+//            let zoneMarker = self.marker(forZone: "1", position: CLLocationCoordinate2D(latitude: 44, longitude: -78))
+//            zoneMarker.map = self.googleMapView
+//            self.zoneMarkers.append(zoneMarker)
         } else {
             for polyline in polylines {
                 polyline.map = nil
@@ -615,6 +655,8 @@ extension LakeSearchController {
             for zoneMarker in zoneMarkers {
                 zoneMarker.map = nil
             }
+            
+            self.showAlert(warnigString: "Zone Boundary Borders Off")
         }
         
     }
@@ -854,6 +896,7 @@ extension LakeSearchController {
         
         if currentZone == "0" {
             zoneInfoText = selectedName + "\n" + "You are not currently in a zone" as NSString
+            
         }
         
         let myMutableString = NSMutableAttributedString(string: zoneInfoText as String, attributes: [NSAttributedStringKey.font:UIFont.systemFont(ofSize: 17)])
@@ -925,6 +968,7 @@ extension LakeSearchController {
                 
             } else {
                 currentZone = "0"
+                
             }
         }
     }
@@ -1161,23 +1205,182 @@ extension LakeSearchController {
     @objc fileprivate func handleAddPin() {
         let createPinController = CreatePinController()
         createPinController.currentLocation = myLocation
+        createPinController.currentMarkerLocation = myLocation
+        createPinController.gmsPaths = self.gmsPaths
         let navController = UINavigationController(rootViewController: createPinController)
         self.present(navController, animated: true, completion: nil)
     }
     
-    @objc fileprivate func handleEditPin() {
+    @objc fileprivate func handleEditPin(marker: LakeMarker) {
         
         let editController = EditPinController()
         editController.currentLocation = myLocation
+        editController.currentMarkerLocation = myLocation
+        editController.gmsPaths = self.gmsPaths
+        editController.currentMarker = marker
+        self.canEdit = false
         let navController = UINavigationController(rootViewController: editController)
         self.present(navController, animated: true, completion: nil)
     }
     
+    @objc fileprivate func setCanEdit() {
+        
+        self.showAlert(warnigString: "Please choose a Marker/Pin to edit")
+        
+        self.canEdit = true
+    }
+    
     @objc fileprivate func handleSync() {
         
-        self.showJHTAlerttOkayWithIcon(message: "There is no data to sync now!\nTry again later.")
+        guard let userId = UserDefaults.standard.getUserId() else { return }
+        
+        if reachAbility.connection == .none {
+            self.showJHTAlerttOkayWithIcon(message: "The Internet connection appears to be offline.")
+            return
+        }
+        
+        let requestStr = String(format: WebService.sync.rawValue, userId)
+        
+        print("requestStr: ", requestStr)
+        guard let urlStr = requestStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+            return
+        }
+        guard let requestUrl = URL(string: urlStr) else {
+            self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+            return
+        }
+        
+        KRProgressHUD.show()
+        
+        URLSession.shared.dataTask(with: requestUrl) { (data, response, error) in
+            
+            if error != nil {
+                print("error: ", error!)
+                DispatchQueue.main.async {
+                    KRProgressHUD.dismiss()
+                    self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+                }
+                return
+            }
+            
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    KRProgressHUD.dismiss()
+                    self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+                }
+                return
+            }
+            
+            let dataAsString = String(data: data, encoding: .utf8)
+            print("string: ", dataAsString!)
+            
+            if dataAsString == "\t{}" {
+                
+                DispatchQueue.main.async {
+                    KRProgressHUD.dismiss()
+                    self.showJHTAlerttOkayWithIcon(message: "Database Up to Date.")
+                }
+                
+            } else {
+                do {
+                    let infos = try JSONDecoder().decode(Infos.self, from: data)
+                    print(infos)
+                    
+                    let success = self.handleSqliteDB(infos: infos)
+                    
+                    if success {
+                        DispatchQueue.main.async {
+                            KRProgressHUD.dismiss()
+                            self.showJHTAlerttOkayWithIcon(message: "Success!\nFishLegit was updated!")
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            KRProgressHUD.dismiss()
+                            self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+                        }
+                    }
+                } catch let jsonErr {
+                    print("Error serializing error: ", jsonErr)
+                    DispatchQueue.main.async {
+                        KRProgressHUD.dismiss()
+                        self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    private func handleSqliteDB(infos: Infos) -> Bool {
+        
+        var success = false
+        
+        if let newPins = infos.new_pins {
+            
+            for newPin in newPins {
+                if let exceptions = newPin.exceptions, let exceptionsDic = exceptions.dictionary  {
+                    success = SQLiteHelper.insert(inTable: "exceptions", params: exceptionsDic)
+                    
+                    print("new_exceptions: ", success)
+                }
+                
+                if let features = newPin.features, let featuresDic = features.dictionary {
+                    success = SQLiteHelper.insert(inTable: "features", params: featuresDic)
+                    print("new_features: ", success)
+                }
+                
+                if let lakes = newPin.lakes, let id = lakes.id, let name = lakes.name {
+                    let lakesDic = ["id": id, "name": name]
+                    success = SQLiteHelper.insert(inTable: "lakes", params: lakesDic)
+                    print("new_lakes: ", success)
+                }
+                
+                if let zonesSandl = newPin.zones_sandl, let zonesSandlDic = zonesSandl.dictionary {
+                    _ = SQLiteHelper.insert(inTable: "zones_sandl", params: zonesSandlDic)
+                    print("new_zones_sandl: ", success)
+                }
+            }
+            
+        }
+        
+        if let editPins = infos.edit_pins {
+            
+            for editPin in editPins {
+                if let exceptions = editPin.exceptions, let exceptionsDic = exceptions.dictionary {
+                    guard let id = exceptions.id else { return false }
+                    let whereDic = ["id": id]
+                    success = SQLiteHelper.update(inTable: "exceptions", params: exceptionsDic, where: whereDic)
+                    print("edit_exceptions: ", success)
+                }
+                
+                if let features = editPin.features, let featuresDic = features.dictionary {
+                    guard let id = features.id else { return false }
+                    let whereDic = ["id": id]
+                    success = SQLiteHelper.update(inTable: "features", params: featuresDic, where: whereDic)
+                    print("edit_features: ", success)
+                }
+                
+                if let lakes = editPin.lakes, let id = lakes.id, let name = lakes.name {
+                    let lakesDic = ["id": id, "name": name]
+                    let whereDic = ["id": id]
+                    success = SQLiteHelper.update(inTable: "lakes", params: lakesDic, where: whereDic)
+                    print("edit_lakes: ", success)
+                }
+                
+                if let zonesSandl = editPin.zones_sandl, let zonesSandlDic = zonesSandl.dictionary {
+                    guard let id = zonesSandl.id else { return false }
+                    let whereDic = ["id": id]
+                    _ = SQLiteHelper.update(inTable: "zones_sandl", params: zonesSandlDic, where: whereDic)
+                    print("edit_zones_sandle: ", success)
+                }
+            }
+        }
+        
+        return success
         
     }
+    
+    
     
 }
 
@@ -1349,6 +1552,12 @@ extension LakeSearchController: SliderViewDelegate {
 extension LakeSearchController: GMSMapViewDelegate {
     func mapView(_ mapView: GMSMapView, didTap marker: GMSMarker) -> Bool {
         print("tapped marker")
+        
+        if marker.isKind(of: LakeMarker.self), let selectedMarker = marker as? LakeMarker {
+            
+            selectedMarker.isDraggable = true
+            self.handleEditPin(marker: selectedMarker)
+        }
         
         return false
     }
@@ -1527,41 +1736,33 @@ extension LakeSearchController: UIAdaptivePresentationControllerDelegate {
     }
     
     private func setupPopoverMenu(sender: UIBarButtonItem) {
-        let menus = ["Search by Lake", "Search by Township", "Search by Species", "Zone Information", "Create Pin", "Edit Pin", "Sync", "Report a bug"]
+        let menus = ["Search by Species", "Zone Information", "Create Pin", "Edit Pin", "Sync", "Report a bug"]
         let popoverMenuController = PopOverViewController.instantiate()
         popoverMenuController.setTitles(menus)
         popoverMenuController.setSeparatorStyle(.singleLine)
         popoverMenuController.popoverPresentationController?.barButtonItem = sender
-        popoverMenuController.preferredContentSize = CGSize(width: 180, height: 360)
+        popoverMenuController.preferredContentSize = CGSize(width: 180, height: 270)
         popoverMenuController.presentationController?.delegate = self
         popoverMenuController.completionHandler = { selectRow in
             
             switch (selectRow) {
             case 0:
-                self.handleSearchTableViewWith(typeStr: "lakes")
-                self.selectedButtonState = .SearchLake
-                break
-            case 1:
-                self.handleSearchTableViewWith(typeStr: "townships")
-                self.selectedButtonState = .SearchTownship
-                break
-            case 2:
                 self.handleSearchTableViewWith(typeStr: "species")
                 self.selectedButtonState = .SearchSpecies
                 break
-            case 3:
+            case 1:
                 self.handleZoneInfoView()
                 break
-            case 4:
+            case 2:
                 self.handleAddPin()
                 break
-            case 5:
-                self.handleEditPin()
+            case 3:
+                self.setCanEdit()
                 break
-            case 6:
+            case 4:
                 self.handleSync()
                 break
-            case 7:
+            case 5:
                 self.handleSendingEmail()
                 break
             default:

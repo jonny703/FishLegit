@@ -132,26 +132,34 @@ extension SignupController {
                 return
             }
             
-            do {
-                let fishLegitUser = try JSONDecoder().decode(FishLegitUser.self, from: data)
-                print(fishLegitUser)
-                
-                let jsonString = String(data: data, encoding: .utf8)
-                print("json: ", jsonString ?? "")
-                
+            let jsonString = String(data: data, encoding: .utf8)
+            print("json: ", jsonString ?? "")
+            
+            if jsonString == "\t\"Exists\"" {
                 DispatchQueue.main.async {
                     KRProgressHUD.dismiss()
                     
-                    self.showJHTAlerttOkayWithIconForAction(message: "Success!\nPlease check your email for an activation link.", action: { (action) in
-                        self.handleDismissController()
-                    })
+                    self.showJHTAlerttOkayWithIcon(message: "User already exists!")
                 }
-                
-            } catch let jsonErr {
-                print("Error serializing error: ", jsonErr)
-                DispatchQueue.main.async {
-                    KRProgressHUD.dismiss()
-                    self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+            } else {
+                do {
+                    let fishLegitUser = try JSONDecoder().decode(FishLegitUser.self, from: data)
+                    print(fishLegitUser)
+                    
+                    DispatchQueue.main.async {
+                        KRProgressHUD.dismiss()
+                        
+                        self.showJHTAlerttOkayWithIconForAction(message: "Success!\nPlease check your email for an activation link.", action: { (action) in
+                            self.handleDismissController()
+                        })
+                    }
+                    
+                } catch let jsonErr {
+                    print("Error serializing error: ", jsonErr)
+                    DispatchQueue.main.async {
+                        KRProgressHUD.dismiss()
+                        self.showJHTAlerttOkayWithIcon(message: "Something went wrong!\nTry again later.")
+                    }
                 }
             }
         }.resume()
