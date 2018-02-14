@@ -2617,6 +2617,14 @@
 		078D8FA41FECEB7900BED5F6 /* nz8.kml in Resources */ = {isa = PBXBuildFile; fileRef = 078D8F931FECEB7500BED5F6 /* nz8.kml */; };
 		078D8FA51FECEB7900BED5F6 /* nz11.kml in Resources */ = {isa = PBXBuildFile; fileRef = 078D8F941FECEB7800BED5F6 /* nz11.kml */; };
 		078D97171F26903A004BBCA9 /* fishlegit.png in Resources */ = {isa = PBXBuildFile; fileRef = 078D97161F26903A004BBCA9 /* fishlegit.png */; };
+		07A5C5A7201ADA0B009B631A /* JoyStickView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A5C5A6201ADA0A009B631A /* JoyStickView.swift */; };
+		07A5C5AE201ADA1B009B631A /* JoyStickHandle@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5A8201ADA18009B631A /* JoyStickHandle@1x.png */; };
+		07A5C5AF201ADA1B009B631A /* JoyStickHandle@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5A9201ADA18009B631A /* JoyStickHandle@2x.png */; };
+		07A5C5B0201ADA1B009B631A /* JoyStickHandle@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5AA201ADA19009B631A /* JoyStickHandle@3x.png */; };
+		07A5C5B1201ADA1B009B631A /* JoyStickBase@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5AB201ADA19009B631A /* JoyStickBase@2x.png */; };
+		07A5C5B2201ADA1B009B631A /* JoyStickBase@1x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5AC201ADA1A009B631A /* JoyStickBase@1x.png */; };
+		07A5C5B3201ADA1B009B631A /* JoyStickBase@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 07A5C5AD201ADA1A009B631A /* JoyStickBase@3x.png */; };
+		07A5C5B5201ADA63009B631A /* CoreGraphics+Additions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A5C5B4201ADA62009B631A /* CoreGraphics+Additions.swift */; };
 		07AAA4891EE085AA00D85107 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AAA4881EE085AA00D85107 /* AppDelegate.swift */; };
 		07AAA4901EE085AA00D85107 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07AAA48F1EE085AA00D85107 /* Assets.xcassets */; };
 		07AAA4931EE085AA00D85107 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 07AAA4911EE085AA00D85107 /* LaunchScreen.storyboard */; };
@@ -5252,6 +5260,14 @@
 		078D8F931FECEB7500BED5F6 /* nz8.kml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nz8.kml; sourceTree = "<group>"; };
 		078D8F941FECEB7800BED5F6 /* nz11.kml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = nz11.kml; sourceTree = "<group>"; };
 		078D97161F26903A004BBCA9 /* fishlegit.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fishlegit.png; sourceTree = "<group>"; };
+		07A5C5A6201ADA0A009B631A /* JoyStickView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JoyStickView.swift; sourceTree = "<group>"; };
+		07A5C5A8201ADA18009B631A /* JoyStickHandle@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickHandle@1x.png"; sourceTree = "<group>"; };
+		07A5C5A9201ADA18009B631A /* JoyStickHandle@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickHandle@2x.png"; sourceTree = "<group>"; };
+		07A5C5AA201ADA19009B631A /* JoyStickHandle@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickHandle@3x.png"; sourceTree = "<group>"; };
+		07A5C5AB201ADA19009B631A /* JoyStickBase@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickBase@2x.png"; sourceTree = "<group>"; };
+		07A5C5AC201ADA1A009B631A /* JoyStickBase@1x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickBase@1x.png"; sourceTree = "<group>"; };
+		07A5C5AD201ADA1A009B631A /* JoyStickBase@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "JoyStickBase@3x.png"; sourceTree = "<group>"; };
+		07A5C5B4201ADA62009B631A /* CoreGraphics+Additions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CoreGraphics+Additions.swift"; sourceTree = "<group>"; };
 		07AAA4851EE085AA00D85107 /* Fishing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fishing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07AAA4881EE085AA00D85107 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		07AAA48F1EE085AA00D85107 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -7956,6 +7972,21 @@
 			name = zoneKmlsForBorders;
 			sourceTree = "<group>";
 		};
+		07A5C5A5201AD9EB009B631A /* JoyStick */ = {
+			isa = PBXGroup;
+			children = (
+				07A5C5AC201ADA1A009B631A /* JoyStickBase@1x.png */,
+				07A5C5AB201ADA19009B631A /* JoyStickBase@2x.png */,
+				07A5C5AD201ADA1A009B631A /* JoyStickBase@3x.png */,
+				07A5C5A8201ADA18009B631A /* JoyStickHandle@1x.png */,
+				07A5C5A9201ADA18009B631A /* JoyStickHandle@2x.png */,
+				07A5C5AA201ADA19009B631A /* JoyStickHandle@3x.png */,
+				07A5C5B4201ADA62009B631A /* CoreGraphics+Additions.swift */,
+				07A5C5A6201ADA0A009B631A /* JoyStickView.swift */,
+			);
+			name = JoyStick;
+			sourceTree = "<group>";
+		};
 		07A6D0D51EE454E000541097 /* SQLite */ = {
 			isa = PBXGroup;
 			children = (
@@ -8060,6 +8091,7 @@
 		07B499B11EE7274F00906D07 /* CustomView */ = {
 			isa = PBXGroup;
 			children = (
+				07A5C5A5201AD9EB009B631A /* JoyStick */,
 				0712CF551FAC190500D2B543 /* SRPopView */,
 				07376D471EEE397C00F4F9E3 /* Cells */,
 				073F5FE11F76F8A90003E3F8 /* DisclaimerView */,
@@ -8528,6 +8560,7 @@
 				076D6D801F1413CF00D0B94A /* t (1958).kml in Resources */,
 				076D68901F1413CD00D0B94A /* t (694).kml in Resources */,
 				076D6BB81F1413CE00D0B94A /* t (1502).kml in Resources */,
+				07A5C5B3201ADA1B009B631A /* JoyStickBase@3x.png in Resources */,
 				076D6AAF1F1413CE00D0B94A /* t (1237).kml in Resources */,
 				076D6F561F1413CF00D0B94A /* t (2428).kml in Resources */,
 				076D6D401F1413CF00D0B94A /* t (1894).kml in Resources */,
@@ -8681,6 +8714,7 @@
 				076D67B91F1413CD00D0B94A /* t (479).kml in Resources */,
 				076D6BD41F1413CE00D0B94A /* t (1530).kml in Resources */,
 				076D6CD61F1413CE00D0B94A /* t (1788).kml in Resources */,
+				07A5C5B1201ADA1B009B631A /* JoyStickBase@2x.png in Resources */,
 				076D68D71F1413CD00D0B94A /* t (765).kml in Resources */,
 				076D6AA81F1413CE00D0B94A /* t (1230).kml in Resources */,
 				076D6E791F1413CF00D0B94A /* t (2207).kml in Resources */,
@@ -8781,6 +8815,7 @@
 				076D6B671F1413CE00D0B94A /* t (1421).kml in Resources */,
 				076D6CAB1F1413CE00D0B94A /* t (1745).kml in Resources */,
 				076D6C961F1413CE00D0B94A /* t (1724).kml in Resources */,
+				07A5C5AF201ADA1B009B631A /* JoyStickHandle@2x.png in Resources */,
 				076D65F31F1413CC00D0B94A /* t (25).kml in Resources */,
 				076D6E181F1413CF00D0B94A /* t (2110).kml in Resources */,
 				076D6C6A1F1413CE00D0B94A /* t (1680).kml in Resources */,
@@ -8854,6 +8889,7 @@
 				076D6D491F1413CF00D0B94A /* t (1903).kml in Resources */,
 				076D6D7E1F1413CF00D0B94A /* t (1956).kml in Resources */,
 				076D6B231F1413CE00D0B94A /* t (1353).kml in Resources */,
+				07A5C5B2201ADA1B009B631A /* JoyStickBase@1x.png in Resources */,
 				076D6B5C1F1413CE00D0B94A /* t (1410).kml in Resources */,
 				076D67921F1413CD00D0B94A /* t (440).kml in Resources */,
 				076D6DF11F1413CF00D0B94A /* t (2071).kml in Resources */,
@@ -9259,6 +9295,7 @@
 				076D6E1A1F1413CF00D0B94A /* t (2112).kml in Resources */,
 				076D66F11F1413CC00D0B94A /* t (279).kml in Resources */,
 				076D6B981F1413CE00D0B94A /* t (1470).kml in Resources */,
+				07A5C5AE201ADA1B009B631A /* JoyStickHandle@1x.png in Resources */,
 				076D6C221F1413CE00D0B94A /* t (1608).kml in Resources */,
 				076D6FB01F1413D000D0B94A /* t (2518).kml in Resources */,
 				076D6CC31F1413CE00D0B94A /* t (1769).kml in Resources */,
@@ -9847,6 +9884,7 @@
 				078D8FA31FECEB7900BED5F6 /* nz15.kml in Resources */,
 				076D69B61F1413CD00D0B94A /* t (988).kml in Resources */,
 				076D6B6C1F1413CE00D0B94A /* t (1426).kml in Resources */,
+				07A5C5B0201ADA1B009B631A /* JoyStickHandle@3x.png in Resources */,
 				076D69161F1413CD00D0B94A /* t (828).kml in Resources */,
 				076D6B281F1413CE00D0B94A /* t (1358).kml in Resources */,
 				076D6F131F1413CF00D0B94A /* t (2361).kml in Resources */,
@@ -10825,10 +10863,12 @@
 				07AAA4A41EE08A5B00D85107 /* LakeSearchController.swift in Sources */,
 				072D2C261FAF9D1C00B4E172 /* CreateContentCell.swift in Sources */,
 				0736A1D51FBA0CDD006EFD6E /* FishLegitUser.swift in Sources */,
+				07A5C5B5201ADA63009B631A /* CoreGraphics+Additions.swift in Sources */,
 				072E47E21F01A30C00445577 /* Zone.swift in Sources */,
 				072FCEF61F19315200E8B507 /* Alerts.swift in Sources */,
 				072D2C281FAFEFB100B4E172 /* Contents.swift in Sources */,
 				078197DF1FA277F300E9E7F3 /* ToplessTextfield.swift in Sources */,
+				07A5C5A7201ADA0B009B631A /* JoyStickView.swift in Sources */,
 				07C00D831FB9D2BD00C35BAB /* WebService.swift in Sources */,
 				078D8F741FE49B4A00BED5F6 /* DisclaimerController.swift in Sources */,
 				07AAA4891EE085AA00D85107 /* AppDelegate.swift in Sources */,
@@ -10985,7 +11025,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = Fishing/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.caesar.general;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11008,7 +11048,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = Fishing/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.caesar.general;
 				PRODUCT_NAME = "$(TARGET_NAME)";

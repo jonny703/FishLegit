@@ -12,7 +12,7 @@ import GoogleMaps
 
 class LakeMarker: GMSMarker {
     
-    let place: LakePlace
+    var place: LakePlace
     
     init(place: LakePlace, type: String, isDraggable: Bool) {
         self.place = place

@@ -108,8 +108,8 @@ extension CreateContentController {
         
         let lakesId = getIdWithName(name: lakeName, tableName: "lakes")
         
-        let lon = String(format: "%f", longitude)
-        let lat = String(format: "%f", latitude)
+        let lon = String(format: "%f", self.getLocationDecimalWith(number: longitude))
+        let lat = String(format: "%f", self.getLocationDecimalWith(number: latitude))
         
         var townshipId = township
         if township != "Unknown Township" {
@@ -177,7 +177,7 @@ extension CreateContentController {
                 DispatchQueue.main.async {
                     KRProgressHUD.dismiss()
                     
-                    self.showJHTAlerttOkayWithIconForAction(message: "Success!\nWe will notify you when it is approved.", action: { (action) in
+                    self.showJHTAlerttOkayWithIconForAction(message: "Success!", action: { (action) in
                         self.dismiss(animated: true) {
                             
                             if let createPinDelegate = self.createPinDelegate {
@@ -231,8 +231,8 @@ extension CreateContentController {
         
         let lakesId = getIdWithName(name: lakeName, tableName: "lakes")
         
-        let lon = String(format: "%f", longitude)
-        let lat = String(format: "%f", latitude)
+        let lon = String(format: "%f", self.getLocationDecimalWith(number: longitude))
+        let lat = String(format: "%f", self.getLocationDecimalWith(number: latitude))
         
         var townshipId = township
         if township != "Unknown Township" {
@@ -292,7 +292,7 @@ extension CreateContentController {
                 DispatchQueue.main.async {
                     KRProgressHUD.dismiss()
                     
-                    self.showJHTAlerttOkayWithIconForAction(message: "Success!\nWe will notify you when it is approved.", action: { (action) in
+                    self.showJHTAlerttOkayWithIconForAction(message: "Success!", action: { (action) in
                         self.dismiss(animated: true) {
                             
                             if let createPinDelegate = self.createPinDelegate {
@@ -316,6 +316,15 @@ extension CreateContentController {
             }
             }.resume()
         
+    }
+    
+    func getLocationDecimalWith(number: Double) -> Double {
+        
+        let lonNumber1 = Int(number)
+        let lonNumber2 = number - Double(lonNumber1)
+        let lonNumber3 = Double(lonNumber1) + Double(lonNumber2) * 60.0 / 100
+        
+        return lonNumber3
     }
     
     private func handleGetOldData(type: String, typeId: String) -> OldPin {
