@@ -150,13 +150,6 @@ func fetchZoneInfoWith(selectedZone: String, selectedSpecies: String) -> String 
     if opening_day != "" {
         zoneInfo += "Open Seasons: "
         
-        
-        
-//        zoneInfo += opening_day + " in " + opening_month + " "
-//        if open != "" {
-//            zoneInfo += open + " to " + closing + " "
-//        }
-        
         if open != "" {
             zoneInfo += convertDayofWeek(dateStr: open)! + " in " + opening_month + " "
             zoneInfo += " to " + closing + " "
@@ -166,8 +159,6 @@ func fetchZoneInfoWith(selectedZone: String, selectedSpecies: String) -> String 
         if opening_day2 != "" {
             if open != "" {
                 zoneInfo += " & ";
-//                zoneInfo += opening_day2 + " in " + opening_month2 + " "
-                
                 zoneInfo += convertDayofWeek(dateStr: open2)! + " in " + opening_month2 + " "
             }
         }
@@ -178,7 +169,6 @@ func fetchZoneInfoWith(selectedZone: String, selectedSpecies: String) -> String 
             if opening_day2 != "" {
                 if open != "" {
                     zoneInfo += " & ";
-//                    zoneInfo += opening_day2 + " in " + opening_month2 + " "
                     zoneInfo += convertDayofWeek(dateStr: open2)! + " in " + opening_month2 + " "
                 }
             }

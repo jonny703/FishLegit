@@ -14,7 +14,7 @@ class LakePlace {
     
     let lakeName: String
     let townshipName: String
-    let coordinate: CLLocationCoordinate2D
+    var coordinate: CLLocationCoordinate2D
     let opportunity: String
     let exception: String
     let distance: Double

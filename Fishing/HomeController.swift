@@ -463,7 +463,7 @@ extension HomeController {
         zoneLabel.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
         
         if UI_USER_INTERFACE_IDIOM() == .pad {
-            zoneLabel.heightAnchor.constraint(equalToConstant: 60).isActive = true
+            zoneLabel.heightAnchor.constraint(equalToConstant: 80).isActive = true
             zoneLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 30).isActive = true
         } else if UI_USER_INTERFACE_IDIOM() == .phone {
             zoneLabel.heightAnchor.constraint(equalToConstant: 40).isActive = true

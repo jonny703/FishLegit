@@ -28,6 +28,12 @@ struct Info: Decodable {
     let features: features?
     let lakes: lakes?
     let zones_sandl: zones_sandl?
+    let species: species?
+}
+
+struct species: Decodable, Encodable {
+    let id: String?
+    let name: String?
 }
 
 struct exceptions: Decodable, Encodable {

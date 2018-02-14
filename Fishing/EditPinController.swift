@@ -148,6 +148,7 @@ class EditPinController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        setupJoyStick()
         self.addKeyboardObserver()
     }
     
@@ -155,6 +156,46 @@ class EditPinController: UIViewController {
         super.viewWillDisappear(animated)
         self.removeKeyboardObserver()
     }
+}
+
+extension EditPinController: JoystickDelegate {
+    func handleJoyStick(angle: CGFloat, displacement: CGFloat) {
+        
+//        print("joystick point", angle, displacement)
+        
+        let x = sin(angle * CGFloat.pi / 180.0) * displacement * 0.001
+        let y = cos(angle * CGFloat.pi / 180.0) * displacement * 0.001
+        
+        self.currentMarker?.place.coordinate.longitude += Double(x)
+        self.currentMarker?.place.coordinate.latitude += Double(y)
+        
+        print("joystick point", self.currentMarker?.place.coordinate.longitude, self.currentMarker?.place.coordinate.latitude)
+        
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.001)
+        self.currentMarker?.position = (self.currentMarker?.place.coordinate)!
+        CATransaction.commit()
+        
+        if displacement == 0.0 {
+            KRProgressHUD.show()
+            guard let contents = self.setContents() else { return }
+            self.contents = contents
+            self.currentMarkerLocation = (self.currentMarker?.place.coordinate)!
+            
+            self.contents?.latitude = self.currentMarker?.position.latitude
+            self.contents?.longitude = self.currentMarker?.position.longitude
+            
+            self.perform(#selector(setTownshipZone), with: nil, afterDelay: 1.0)
+            self.googleMapView.clear()
+            self.currentMarker?.map = self.googleMapView
+//            self.focusLakeMarker()
+            return
+        }
+        
+        
+    }
+    
+    
 }
 
 extension EditPinController {
@@ -569,8 +610,56 @@ extension EditPinController {
 extension EditPinController: EditPinDelegate {
     func resetContentsAndLakeMarker(contents: Contents) {
         
+        self.contents = contents
+        let lakePlace = self.setLakePlaceWith(contents: contents)
+        let lakeMarker = self.setMarkerWith(place: lakePlace)
         
+        self.resetLakeMarkerWith(marker: lakeMarker)
+        self.focusLakeMarker()
         
+    }
+    
+    fileprivate func resetLakeMarkerWith(marker: LakeMarker) {
+        self.googleMapView.clear()
+        marker.map = self.googleMapView
+        handleShowZoneBorders()
+        self.currentMarker = marker
+    }
+    
+    fileprivate func setLakePlaceWith(contents: Contents) -> LakePlace {
+        
+        var lakeName = ""
+        var townshipName = ""
+        var opportunity = ""
+        var exception = ""
+        var coordinate = CLLocationCoordinate2D(latitude: 45, longitude: -80)
+        var type = LakeType.opportunity.rawValue
+        
+        if let lake = contents.lakeName {
+            lakeName = lake
+        }
+        if let township = contents.townshipName {
+            townshipName = township
+        }
+        
+        if let detail = contents.detail {
+            if contents.kind == LakeType.opportunity.rawValue {
+                opportunity = "Opportunity: " + detail
+            } else {
+                exception = "Exception: " + detail
+            }
+        }
+        if let latitude = contents.latitude, let longitude = contents.longitude {
+            coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        }
+        
+        if let lakeType = contents.kind {
+            type = lakeType
+        }
+        
+        let lakePlace = LakePlace(lakeName: lakeName, townshipName: townshipName, opportunity: opportunity, exception: exception, coordinate: coordinate, distance: 10, type: type, typeId: "0", species: contents.species)
+        
+        return lakePlace
     }
 }
 
@@ -852,6 +941,7 @@ extension EditPinController: GMSMapViewDelegate {
         let lakePlace = self.resetLakePlaceWith(lat: marker.position.latitude, lon: marker.position.longitude, marker: currentMarker)
         let tempMarker = self.setMarkerWith(place: lakePlace)
         self.currentMarker = tempMarker
+        self.currentMarker?.position = CLLocationCoordinate2D(latitude: marker.position.latitude, longitude: marker.position.longitude)
         
         self.currentMarkerLocation = tempMarker.place.coordinate
         
@@ -859,6 +949,9 @@ extension EditPinController: GMSMapViewDelegate {
         self.contents?.longitude = marker.position.longitude
         
         perform(#selector(setTownshipZone), with: nil, afterDelay: 1.0)
+        
+        self.googleMapView.clear()
+        self.currentMarker?.map = self.googleMapView
     }
     
     @objc private func setTownshipZone() {
@@ -1299,8 +1392,30 @@ extension EditPinController {
         setupNavbar()
         setGoogleMap()
         setupSegments()
-        setupSwitch() 
+        setupSwitch()
         setInvalidCommandLabel()
+    }
+    
+    private func setupJoyStick() {
+        
+        let rect = view.frame
+        var size = CGSize(width: 100.0, height: 100.0)
+        if UI_USER_INTERFACE_IDIOM() == .pad {
+            size = CGSize(width: 180.0, height: 180.0)
+        }
+        let joystick1Frame = CGRect(origin: CGPoint(x: 20.0,
+                                                    y: (rect.height - size.height - 25.0)),
+                                    size: size)
+        let joystick = JoyStickView(frame: joystick1Frame)
+
+        joystick.delegate = self
+
+        view.addSubview(joystick)
+
+        joystick.movable = false
+        joystick.alpha = 1.0
+        joystick.baseAlpha = 0.5 // let the background bleed thru the base
+        joystick.handleTintColor = StyleGuideManager.fishLegitDefultBlueColor // Colorize the handle
     }
     
     fileprivate func setupVars() {

@@ -19,6 +19,8 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
     let cellId = "cellId"
     let speciesCellId = "speciesCellId"
     
+    var myMarker = GMSMarker()
+    
     var currentLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
     var myLocation = CLLocationCoordinate2D(latitude: 40.0, longitude: -70.0)
     
@@ -243,8 +245,6 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
         return view
     }()
     
-    
-    
     let secondNavigationBar: UIView = {
         let view = UIView()
         view.backgroundColor = StyleGuideManager.fishLegitDefultBlueColor
@@ -316,11 +316,65 @@ class LakeSearchController: UIViewController, XMLParserDelegate {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        
     }
     
     
     @objc func goingBack() {
         self.navigationController?.popViewController(animated: true)
+    }
+    
+    
+}
+
+extension LakeSearchController: JoystickDelegate {
+    func handleJoyStick(angle: CGFloat, displacement: CGFloat) {
+        
+        //        print("joystick point", angle, displacement)
+        
+        var stepValue: CGFloat = 0
+        
+        let zoomLevel = self.googleMapView.camera.zoom
+        
+        print("zoomLevel", zoomLevel)
+        if zoomLevel < 3 {
+            stepValue = 0.5
+        } else if zoomLevel >= 3 || zoomLevel < 5 {
+            stepValue = 0.07
+        }  else if zoomLevel >= 5 || zoomLevel < 7 {
+            stepValue = 0.03
+        } else if zoomLevel >= 7 || zoomLevel < 10 {
+            
+            stepValue = 0.01
+        } else {
+            stepValue = 0.001
+        }
+        
+        let x = sin(angle * CGFloat.pi / 180.0) * displacement * stepValue
+        let y = cos(angle * CGFloat.pi / 180.0) * displacement * stepValue
+        
+        currentLocation.longitude += Double(x)
+        currentLocation.latitude += Double(y)
+        
+//        print("joystick point", self.currentLocation.longitude, self.currentLocation.latitude)
+        
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.001)
+        self.myMarker.position = currentLocation
+        CATransaction.commit()
+        
+        if displacement == 0.0 {
+            
+            
+            KRProgressHUD.show()
+            currentLocation = CLLocationCoordinate2D(latitude: myMarker.position.latitude, longitude: myMarker.position.longitude)
+
+            perform(#selector(handleZoneAndTownship), with: nil, afterDelay: 1.0)
+            
+            return
+        }
+        
+        
     }
     
     
@@ -351,6 +405,29 @@ extension LakeSearchController {
         setupZoneInfoLabel()
         setupShowNearestSlider()
         setInvalidCommandLabel()
+        setupJoyStick()
+    }
+    
+    private func setupJoyStick() {
+        
+        let rect = view.frame
+        var size = CGSize(width: 100.0, height: 100.0)
+        if UI_USER_INTERFACE_IDIOM() == .pad {
+            size = CGSize(width: 180.0, height: 180.0)
+        }
+        let joystick1Frame = CGRect(origin: CGPoint(x: 20.0,
+                                                    y: (rect.height - size.height - 25.0)),
+                                    size: size)
+        let joystick = JoyStickView(frame: joystick1Frame)
+        
+        joystick.delegate = self
+        
+        view.addSubview(joystick)
+        
+        joystick.movable = false
+        joystick.alpha = 1.0
+        joystick.baseAlpha = 0.5 // let the background bleed thru the base
+        joystick.handleTintColor = StyleGuideManager.fishLegitDefultBlueColor // Colorize the handle
     }
     
     private func setupSwitch() {
@@ -428,22 +505,37 @@ extension LakeSearchController {
         
         containerZoneInfoView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         containerZoneInfoView.centerYAnchor.constraint(equalTo: view.centerYAnchor).isActive = true
-        containerZoneInfoView.widthAnchor.constraint(equalToConstant: 200).isActive = true
-        containerZoneInfoView.heightAnchor.constraint(equalToConstant: 300).isActive = true
+        
+        if UI_USER_INTERFACE_IDIOM() == .pad {
+            containerZoneInfoView.widthAnchor.constraint(equalToConstant: 400).isActive = true
+            containerZoneInfoView.heightAnchor.constraint(equalToConstant: 600).isActive = true
+        } else if UI_USER_INTERFACE_IDIOM() == .phone {
+            containerZoneInfoView.widthAnchor.constraint(equalToConstant: 250).isActive = true
+            containerZoneInfoView.heightAnchor.constraint(equalToConstant: 350).isActive = true
+        }
         
         containerZoneInfoView.addSubview(zoneSelectField)
         
         zoneSelectField.topAnchor.constraint(equalTo: containerZoneInfoView.topAnchor, constant: 10).isActive = true
         zoneSelectField.leftAnchor.constraint(equalTo: containerZoneInfoView.leftAnchor, constant: 10).isActive = true
         zoneSelectField.rightAnchor.constraint(equalTo: containerZoneInfoView.rightAnchor, constant: -10).isActive = true
-        zoneSelectField.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        
+        if UI_USER_INTERFACE_IDIOM() == .pad {
+            zoneSelectField.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        } else if UI_USER_INTERFACE_IDIOM() == .phone {
+            zoneSelectField.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        }
         
         containerZoneInfoView.addSubview(speciesSelectField)
         
         speciesSelectField.topAnchor.constraint(equalTo: zoneSelectField.bottomAnchor, constant: 10).isActive = true
         speciesSelectField.leftAnchor.constraint(equalTo: containerZoneInfoView.leftAnchor, constant: 10).isActive = true
         speciesSelectField.rightAnchor.constraint(equalTo: containerZoneInfoView.rightAnchor, constant: -10).isActive = true
-        speciesSelectField.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        if UI_USER_INTERFACE_IDIOM() == .pad {
+            speciesSelectField.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        } else if UI_USER_INTERFACE_IDIOM() == .phone {
+            speciesSelectField.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        }
         
         containerZoneInfoView.addSubview(zoneInfoTextView)
         
@@ -529,7 +621,7 @@ extension LakeSearchController {
         
         navigationItem.titleView = titleLabel
         
-        let searchImage = UIImage(named: "search")
+        let searchImage = UIImage(named: "menu")
         let searchLakeButton = UIBarButtonItem(image: searchImage, style: .plain, target: self, action: #selector(handlePopoverMenu(sender:)))
         searchLakeButton.tintColor = .white
         self.navigationItem.rightBarButtonItems = [searchLakeButton]
@@ -671,17 +763,17 @@ extension LakeSearchController {
 //MARK: create marker
 extension LakeSearchController {
     func createMarker(titleMarker: String, iconMarker: UIImage, latitude: CLLocationDegrees, longitude: CLLocationDegrees, kind: String) {
-        let marker = GMSMarker()
-        marker.position = CLLocationCoordinate2DMake(latitude, longitude)
-        marker.title = titleMarker
-        marker.icon = iconMarker
-        marker.map = googleMapView
-        marker.isDraggable = true
+        
+        myMarker.position = CLLocationCoordinate2DMake(latitude, longitude)
+        myMarker.title = titleMarker
+        myMarker.icon = iconMarker
+        myMarker.map = googleMapView
+        myMarker.isDraggable = true
         
         let zoom = self.calculateZoomLevel(radius: searchRadius)
         
         if kind == SearchStatus.Other {
-            googleMapView.animate(toLocation: marker.position)
+            googleMapView.animate(toLocation: myMarker.position)
             googleMapView.animate(toZoom: Float(zoom))
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: {
@@ -868,7 +960,7 @@ extension LakeSearchController {
     }
     
     
-    fileprivate func fetchData() {
+    @objc fileprivate func fetchData() {
         townships.removeAll()
         determineTwonshipKmlWith(currentLocation: currentLocation)
         handleDetectWhickTownship()
@@ -881,6 +973,8 @@ extension LakeSearchController {
         }
         
         self.handleZoneInfo()
+        
+        KRProgressHUD.dismiss()
     }
     
     @objc fileprivate func handleFetchAllLake() {
@@ -1292,7 +1386,10 @@ extension LakeSearchController {
                     if success {
                         DispatchQueue.main.async {
                             KRProgressHUD.dismiss()
-                            self.showJHTAlerttOkayWithIcon(message: "Success!\nFishLegit was updated!")
+                            self.showJHTAlerttOkayWithIconForAction(message: "Success!\nFishLegit was updated!", action: { (action) in
+                                KRProgressHUD.show()
+                                self.perform(#selector(self.fetchData), with: nil, afterDelay: 1)
+                            })
                         }
                     } else {
                         DispatchQueue.main.async {
@@ -1329,11 +1426,11 @@ extension LakeSearchController {
                     print("new_features: ", success)
                 }
                 
-                if let lakes = newPin.lakes, let id = lakes.id, let name = lakes.name {
-                    let lakesDic = ["id": id, "name": name]
-                    success = SQLiteHelper.insert(inTable: "lakes", params: lakesDic)
-                    print("new_lakes: ", success)
-                }
+//                if let lakes = newPin.lakes, let id = lakes.id, let name = lakes.name {
+//                    let lakesDic = ["id": id, "name": name]
+//                    success = SQLiteHelper.insert(inTable: "lakes", params: lakesDic)
+//                    print("new_lakes: ", success)
+//                }
                 
                 if let zonesSandl = newPin.zones_sandl, let zonesSandlDic = zonesSandl.dictionary {
                     _ = SQLiteHelper.insert(inTable: "zones_sandl", params: zonesSandlDic)
@@ -1360,12 +1457,12 @@ extension LakeSearchController {
                     print("edit_features: ", success)
                 }
                 
-                if let lakes = editPin.lakes, let id = lakes.id, let name = lakes.name {
-                    let lakesDic = ["id": id, "name": name]
-                    let whereDic = ["id": id]
-                    success = SQLiteHelper.update(inTable: "lakes", params: lakesDic, where: whereDic)
-                    print("edit_lakes: ", success)
-                }
+//                if let lakes = editPin.lakes, let id = lakes.id, let name = lakes.name {
+//                    let lakesDic = ["id": id, "name": name]
+//                    let whereDic = ["id": id]
+//                    success = SQLiteHelper.update(inTable: "lakes", params: lakesDic, where: whereDic)
+//                    print("edit_lakes: ", success)
+//                }
                 
                 if let zonesSandl = editPin.zones_sandl, let zonesSandlDic = zonesSandl.dictionary {
                     guard let id = zonesSandl.id else { return false }
@@ -1555,8 +1652,15 @@ extension LakeSearchController: GMSMapViewDelegate {
         
         if marker.isKind(of: LakeMarker.self), let selectedMarker = marker as? LakeMarker {
             
-            selectedMarker.isDraggable = true
-            self.handleEditPin(marker: selectedMarker)
+            if self.canEdit == true {
+                selectedMarker.isDraggable = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
+                    self.handleEditPin(marker: selectedMarker)
+                    
+                })
+                return false
+            }
+            
         }
         
         return false
